@@ -15,7 +15,6 @@ from config import Config
 from keras_model import Code2VecModel
 from path_context_reader import EstimatorAction
 
-SHOW_TOP_CONTEXTS = 10
 MAX_LEAF_NODES = 320
 from argparse import ArgumentParser
 import sys
