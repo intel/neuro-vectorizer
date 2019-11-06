@@ -23,7 +23,7 @@ from ray import tune
 from ray.rllib.models import ModelCatalog
 
 class Code2VecModel(Code2VecModelBase,TFModelV2):
-    def __init__(self, obs_space,action_space,num_outputs,model_config,name):
+    def __init__(self, obs_space=None,action_space=None,num_outputs=35,model_config={},name='my_model'):
         self.base_model: Optional[keras.Model] = None
         self.keras_eval_model: Optional[keras.Model] = None
         self.keras_model_predict_function: Optional[K.GraphExecutionFunction] = None
@@ -112,7 +112,7 @@ class Code2VecModel(Code2VecModelBase,TFModelV2):
     def value_function(self):
         import tensorflow as tf
         return tf.reshape(self._value_out, [-1])
-'''
+    '''
     def _create_metrics_for_keras_eval_model(self) -> Dict[str, List[Union[Callable, keras.metrics.Metric]]]:
         top_k_acc_metrics = []
         for k in range(1, self.config.TOP_K_WORDS_CONSIDERED_DURING_PREDICTION + 1):
@@ -152,7 +152,7 @@ class Code2VecModel(Code2VecModelBase,TFModelV2):
             loss={'target_index': 'sparse_categorical_crossentropy', 'target_string': zero_loss},
             optimizer=optimizer,
             metrics=self._create_metrics_for_keras_eval_model())
-
+    '''
     def _create_data_reader(self, estimator_action: EstimatorAction, repeat_endlessly: bool = False):
         return PathContextReader(
             vocabs=self.vocabs,
@@ -160,7 +160,7 @@ class Code2VecModel(Code2VecModelBase,TFModelV2):
             model_input_tensors_former=_KerasModelInputTensorsFormer(estimator_action=estimator_action),
             estimator_action=estimator_action,
             repeat_endlessly=repeat_endlessly)
-
+    '''
     def _create_train_callbacks(self) -> List[Callback]:
         # TODO: do we want to use early stopping? if so, use the right chechpoint manager and set the correct
         #       `monitor` quantity (example: monitor='val_acc', mode='max')
@@ -391,7 +391,7 @@ class ModelEvaluationCallback(MultiBatchCallback):
         top_k_acc_formated = ['top{}: {:.4f}'.format(i, acc) for i, acc in enumerate(evaluation_results.topk_acc, start=1)]
         for top_k_acc_chunk in common.chunks(top_k_acc_formated, 5):
             self.code2vec_model.log('    ' + (', '.join(top_k_acc_chunk)))
-
+        '''
 
 class _KerasModelInputTensorsFormer(ModelInputTensorsFormer):
     """
@@ -449,3 +449,4 @@ if __name__ == "__main__":
             "custom_model": "my_model",
         },
     })
+'''
