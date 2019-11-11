@@ -1,20 +1,16 @@
-import copy
 import gym
 from gym import spaces
 import pickle
-import time
 import numpy as np
 import re
 import os
-import traceback
-import hashlib
 from extractor_c import CExtractor
 from common import common
 from config import Config
 from my_model import Code2VecModel
 from path_context_reader import EstimatorAction
 from utility import get_bruteforce_runtimes, get_O3_runtimes, get_snapshot_from_code, get_runtime
-
+#the number maximum number of leafs in the AST tree for code2vec
 MAX_LEAF_NODES = 320
 
 
@@ -101,6 +97,7 @@ def get_vectorized_codes(testfiles, new_testfiles):
         f.close()
     return loops_idxs_in_orig, pragmas_idxs, const_new_codes,num_loops,const_orig_codes
 
+#NeuroVectorizer RL Environment
 class NeuroVectorizerEnv(gym.Env):
     def __init__(self, env_config):
         self.config = Config(set_defaults=True, load_from_args=False, verify=True)
@@ -108,16 +105,18 @@ class NeuroVectorizerEnv(gym.Env):
         self.path_extractor = CExtractor(self.config,clang_path=os.environ['CLANG_PATH'],max_leaves=MAX_LEAF_NODES)
         self.dirpath = env_config.get('dirpath')
         self.new_rundir = env_config.get('new_rundir')
+        cmd = 'rm -r ' +self.new_rundir
+        print(cmd)
+        os.system(cmd)
         if not os.path.isdir(self.new_rundir):
             print('creating '+self.new_rundir+' directory')
             os.mkdir(self.new_rundir)
             cmd = 'cp -r ' +self.dirpath+'/* ' +self.new_rundir
             os.system(cmd)
-        self.vec_action_meaning = [1,2,4,8,16,32,64]
-        self.interleave_action_meaning=[1,2,4,8,16]
+        self.vec_action_meaning = [1,2,4,8,16,32,64] # change this to match your hardware
+        self.interleave_action_meaning=[1,2,4,8,16] # change this to match your hardware
         self.action_space = spaces.Discrete(len(self.vec_action_meaning)*len(self.interleave_action_meaning))
-        self.obs_len = 4
-        self.observation_space = spaces.Tuple([spaces.Box(-1000000.0,1000000.0,shape=(self.config.MAX_CONTEXTS,),dtype = np.float32,)]*3+[spaces.Box(-1000000.0,1000000.0,shape=(self.config.MAX_CONTEXTS,),dtype = np.float32)])
+        self.observation_space = spaces.Tuple([spaces.Box(0,10000,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]*3+[spaces.Box(0,10000.0,shape=(self.config.MAX_CONTEXTS,),dtype = np.float32)]) # you might need to change this based on the size of your C code, max sure to replace 10000.0 with the highest value the parser generates
         self.testfiles = [os.path.join(root, name)
              for root, dirs, files in os.walk(self.new_rundir)
              for name in files
@@ -171,9 +170,7 @@ class NeuroVectorizerEnv(gym.Env):
         VF = self.vec_action_meaning[VF_idx]
         IF = self.interleave_action_meaning[IF_idx]
         current_filename = self.new_testfiles[self.current_file_idx]
-        print('trtrtrtr',self.new_code[self.pragmas_idxs[current_filename][self.current_pragma_idx]])
         self.new_code[self.pragmas_idxs[current_filename][self.current_pragma_idx]] = pragma_line.format(VF,IF)
-        print('after',self.new_code[self.pragmas_idxs[current_filename][self.current_pragma_idx]])
         reward = self.get_reward(self.new_code,current_filename)
         #print("VF",VF,"IF",IF)
         #print('reward:', reward, 'O3',self.O3_runtimes[current_filename])

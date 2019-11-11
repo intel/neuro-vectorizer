@@ -38,6 +38,11 @@ def get_bruteforce_runtimes(rundir,files,vec_actions,interleave_actions):
 
 # get all runetimes for O3 (baseline)
 def get_O3_runtimes(rundir,files,vec_actions,interleave_actions):
+    try:
+        with open('./O3_runtimes.pkl', 'rb') as f:
+            return pickle.load(f)
+    except:
+        pass
     O3_runtimes={}
     full_path_header = os.path.join(rundir,'header.c')
     for filename in files:
