@@ -26,21 +26,27 @@ class SimNeuroVectorizerEnv(gym.Env):
             self.o3_runtimes = pickle.load(f)
         with open(os.path.join(rundir,'c_encodings.pkl'),'rb') as f:
             self.encodings = pickle.load(f)
+        self.rollout = env_config.get('rollout',False)
         self.testkeys =[]
+        self.get_runtimes(opt_runtimes,self.rollout)
         self.current_file_idx = 0
-        for key in opt_runtimes.keys():
-            o3_key=key.replace('_74296','_22506')
-            o3 = self.o3_runtimes[o3_key]
-            opt = opt_runtimes[key]
-            improv = (o3-opt)*1.0/o3
-            if improv >0.01:
-                self.testkeys.append(key)
-        #self.testkeys=['garbage24/s6n_64_add_4_74296.c', 'garbage24/s2_4096_2_2_x_out_74296.c', 'garbage24/s12_128_2_2_input_assign_74296.c', 'garbage24/s12n_256_2_2_in1_assign1_74296.c', 'garbage24/s9n_64_64_2_x_74296.c', 'garbage24/s12nn_64_2_2_short_a_assign1_74296.c', 'garbage24/s7n_16384_3_74296.c', 'garbage24/s11_256_mul_4_74296.c', 'garbage24/s13_512_sub_1_74296.c', 'garbage24/s10_8192_add_4_74296.c', 'garbage24/s8_256_4_74296.c', 'garbage24/s7_2048_2_74296.c']
-        self.geo=1
-        self.datapoints = []
+        #self.geo=1
+            
+    def get_runtimes(self,opt_runtimes,rollout=False):
+        if not rollout:
+            for key in opt_runtimes.keys():
+                o3_key=key.replace('_74296','_22506')
+                o3 = self.o3_runtimes[o3_key]
+                opt = opt_runtimes[key]
+                improv = (o3-opt)*1.0/o3
+                if improv >0.01:
+                    self.testkeys.append(key)
+        else:
+            self.testkeys=['garbage24/s6n_64_add_4_74296.c', 'garbage24/s2_4096_2_2_x_out_74296.c', 'garbage24/s12_128_2_2_input_assign_74296.c', 'garbage24/s12n_256_2_2_in1_assign1_74296.c', 'garbage24/s9n_64_64_2_x_74296.c', 'garbage24/s12nn_64_2_2_short_a_assign1_74296.c', 'garbage24/s7n_16384_3_74296.c', 'garbage24/s11_256_mul_4_74296.c', 'garbage24/s13_512_sub_1_74296.c', 'garbage24/s10_8192_add_4_74296.c', 'garbage24/s8_256_4_74296.c', 'garbage24/s7_2048_2_74296.c']
+
     def reset(self):
-        if self.current_file_idx == 0:
-            self.geo=1
+        #if self.current_file_idx == 0:
+        #    self.geo=1
         e_key = self.testkeys[self.current_file_idx].replace('_74296','_27483')
         return_e = []
         for val in self.encodings[e_key][0]:
@@ -69,7 +75,7 @@ class SimNeuroVectorizerEnv(gym.Env):
         return VF_idx, IF_idx
     def step(self,action):
         VF_idx, IF_idx = self.get_VF_IF(action)
-        reward = self.get_reward(VF_idx,IF_idx)
+        reward,O3_time,exec_time = self.get_reward(VF_idx,IF_idx)
 
         self.current_file_idx = (self.current_file_idx+1)%len(self.testkeys)
         e_key = self.testkeys[self.current_file_idx].replace('_74296','_27483')
@@ -81,8 +87,10 @@ class SimNeuroVectorizerEnv(gym.Env):
             if new_val <-1:
                 new_val = -1
             obs.append(new_val)
-
-        return obs, reward, True, {}
+        info = {}
+        if self.rollout:
+            info = {'O3':O3_time,'RL':exec_time,'VF':self.vec_action_meaning[VF_idx],'IF':self.interleave_action_meaning[IF_idx]}
+        return obs, reward, True, info
 
     def get_reward(self,VF_idx,IF_idx):
         key = self.testkeys[self.current_file_idx]
@@ -93,9 +101,5 @@ class SimNeuroVectorizerEnv(gym.Env):
             reward= -9
         else:
             reward = (o3-exec_time)*1.0/o3
-            self.geo=self.geo*((o3/exec_time)**(1/12))
-            #if(self.geo>2.65):
-            #    print('improvement',o3/exec_time,'Factors',VF_idx,IF_idx,'geo',self.geo)
-            #    print('@@@@@@@@@@@@@@@@@@@@')
-        return reward
+        return reward,o3,exec_time
 

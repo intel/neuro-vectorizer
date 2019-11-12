@@ -25,7 +25,9 @@ CLANG_PATH=/usr/lib/llvm-6.0/lib/libclang.so.1
 # CODE2VEC_LOC - should be the location of base codevec
 CODE2VEC_LOC=/home/ameer/Desktop/rlvectorizer/llvm-project/build/NeuroVectorizer/code2vec
 # SOURCE_DIR - top level folder for C source files
-SOURCE_DIR=/home/ameer/Desktop/rlvectorizer/llvm-project/build/NeuroVectorizer/testing_embedding
+SOURCE_DIR=/home/ameer/Desktop/rlvectorizer/llvm-project/build/NeuroVectorizer/training_data
+# NeuroDectorier DIR
+export NeuroVectorizer_DIR=/home/ameer/Desktop/rlvectorizer/llvm-project/build/NeuroVectorizer
 
 ### Give or use less resources
 # MEM_PERCENT - for configurable commands like sort limit increase memory percentage to use

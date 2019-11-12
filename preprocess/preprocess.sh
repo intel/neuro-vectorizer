@@ -41,7 +41,7 @@ n=$(wc -l < ${SORTED_DATA_FILE})
 [[ ! "$n" -gt "0" ]] && echo "Extracted no lines. (missing source files?)" && exit 1
 
 n=$(echo "x=${n} * ${DOWNSAMPLE}; scale = 0; x / 1" | bc -l)
-train_n=$(echo "x=${n} * 0.85; scale = 0; x / 1" | bc -l)
+train_n=$(echo "x=${n} * 0.99; scale = 0; x / 1" | bc -l)
 test_n=$(echo "x=(${n} - ${train_n}) / 2; scale = 0; x / 1" | bc -l)
 # val_n is the rest
 train=$train_n
