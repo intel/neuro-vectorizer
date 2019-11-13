@@ -33,7 +33,7 @@ class NeuroVectorizerEnv(gym.Env):
             os.system(cmd)
         self.vec_action_meaning = [1,2,4,8,16,32,64] # TODO: change this to match your hardware
         self.interleave_action_meaning=[1,2,4,8,16] # TODO: change this to match your hardware
-        self.action_space = spaces.Discrete(len(self.vec_action_meaning)*len(self.interleave_action_meaning))
+        self.action_space = spaces.Tuple([spaces.Discrete(len(self.vec_action_meaning)),spaces.Discrete(len(self.interleave_action_meaning))])
         #TODO you might need to next line based on the size of your C code, max sure to replace 10000.0 with the highest value the parser generates
 
         self.testfiles = [os.path.join(root, name)
@@ -48,7 +48,11 @@ class NeuroVectorizerEnv(gym.Env):
         if not self.train_code2vec: # if you want to train on new data using code2vec or other code embedding without pregathered execution times
             self.obs_len = 384 # TODO: change obs_len based on your seting in code2vec or other code embedding 
             self.observation_space = spaces.Box(-1.0,1.0,shape=(self.obs_len,),dtype = np.float32)
-            self.encodings = c_code2vec_get_encodings(self.new_rundir,self.const_orig_codes,self.loops_idxs_in_orig)# TODO:change this to other code embedding if necessary 
+            self.obs_encodings = c_code2vec_get_encodings(self.new_rundir,self.const_orig_codes,self.loops_idxs_in_orig)# TODO:change this to other code embedding if necessary 
+        # this hsould be removed in later versions    
+            self.vec_action_meaning = [1,2,4,8,16] # TODO: change this to match your hardware
+            self.interleave_action_meaning=[1,2,4,8] # TODO: change this to match your hardware
+            self.action_space = spaces.Tuple([spaces.Discrete(len(self.vec_action_meaning)),spaces.Discrete(len(self.interleave_action_meaning))])
         else:
             from config import Config
             from my_model import Code2VecModel
@@ -62,6 +66,9 @@ class NeuroVectorizerEnv(gym.Env):
     #calculates the RL agent's reward
     def get_reward(self,new_code,current_filename):
         runtime = get_runtime(self.new_rundir,new_code,current_filename)
+        if not self.train_code2vec:
+            if  self.current_pragma_idx+1 == self.num_loops[current_filename]:
+                print('benchmark: ',current_filename,'O3 runtime: ', self.O3_runtimes[current_filename], 'RL runtime: ', runtime)
         reward = (self.O3_runtimes[current_filename]-runtime)/self.O3_runtimes[current_filename]
         return reward
 
@@ -96,8 +103,9 @@ class NeuroVectorizerEnv(gym.Env):
     # RL step function 
     def step(self,action):
         done = True # horizon = 1 
-        VF_idx = int(int(action)/len(self.interleave_action_meaning))
-        IF_idx = int(int(action)%len(self.interleave_action_meaning))
+        action = list(np.reshape(np.array(action),(np.array(action).shape[0],)))
+        VF_idx = action[0]
+        IF_idx = action[1]
         VF = self.vec_action_meaning[VF_idx]
         IF = self.interleave_action_meaning[IF_idx]
         current_filename = self.new_testfiles[self.current_file_idx]
@@ -112,6 +120,9 @@ class NeuroVectorizerEnv(gym.Env):
             self.current_file_idx += 1
             if self.current_file_idx == len(self.new_testfiles):
                 self.current_file_idx = 0
+                if not self.train_code2vec: # remove when open sourcing
+                    exit(0) # finished all program/!
+                
             if not self.train_code2vec:
                 obs =[0]*self.obs_len
             else:

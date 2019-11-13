@@ -22,7 +22,7 @@ def get_bruteforce_runtimes(rundir,files,vec_actions,interleave_actions):
             for j,IF in enumerate(interleave_action_meaning):
                 rm_cmd = 'rm ' + filename[:-1]+'o '
                 os.system(rm_cmd)
-                cmd1 = 'timeout 4s /usr/bin/clang -O3 '+full_path_header +' ' +filename+' -Rpass=loop-vectorize -mllvm -force-vector-width='+str(VF)+' -mllvm -force-vector-interleave='+str(IF)+' -o ' +filename[:-1]+'o'# TODO: fix path
+                cmd1 = 'timeout 4s /usr/bin/clang -O3 -lm '+full_path_header +' ' +filename+' -Rpass=loop-vectorize -mllvm -force-vector-width='+str(VF)+' -mllvm -force-vector-interleave='+str(IF)+' -o ' +filename[:-1]+'o'# TODO: fix path
                 os.system(cmd1)
                 cmd2 = filename[:-1]+'o '
                 try:
@@ -54,7 +54,7 @@ def get_O3_runtimes(rundir,files,vec_actions,interleave_actions):
     for filename in files:
         rm_cmd = 'rm ' + filename[:-1]+'o '
         os.system(rm_cmd)
-        cmd1 = 'timeout 2s /usr/bin/clang -O3 '+full_path_header +' ' +filename+' -o ' +filename[:-1]+'o'# TODO: fix path
+        cmd1 = 'timeout 2s /usr/bin/clang -O3 -lm '+full_path_header +' ' +filename+' -o ' +filename[:-1]+'o'# TODO: fix path
         print(cmd1)
         os.system(cmd1)
         cmd2 = filename[:-1]+'o '
@@ -100,7 +100,7 @@ def c_code2vec_get_encodings(rundir,const_orig_codes,loops_idxs_in_orig):
                                      clang_path=os.environ['CLANG_PATH'],
                                      max_leaves=MAX_LEAF_NODES)
     input_full_path_filename = os.path.join(rundir, 'c_code2vec_input.c')
-    print(input_full_path_filename)
+    #print(input_full_path_filename)
     for key in const_orig_codes.keys():
         encodings[key] = {}
         for idx,loop_idx in enumerate(loops_idxs_in_orig[key]):
@@ -111,11 +111,11 @@ def c_code2vec_get_encodings(rundir,const_orig_codes,loops_idxs_in_orig):
             loop_file.write(''.join(code))
             loop_file.close()
             predict_lines, hash_to_string_dict = path_extractor.extract_paths(input_full_path_filename)
-            print('predict lines:',predict_lines)
-            print('hash:',hash_to_string_dict)
+            #print('predict lines:',predict_lines)
+            #print('hash:',hash_to_string_dict)
             results, code_vectors = model.predict(predict_lines)
-            print(sum(code_vectors[0]))
-            print(code)
+            #print(sum(code_vectors[0]))
+            #print(code)
             encodings[key][idx] = code_vectors[0]
     model.close_session()
     print(encodings)
@@ -124,7 +124,8 @@ def c_code2vec_get_encodings(rundir,const_orig_codes,loops_idxs_in_orig):
     output.close()
     return encodings
 
-''' works with new versions of code2vec
+''' 
+works with new versions of code2vec
 def c_code2vec_get_encodings(rundir,const_orig_codes,loops_idxs_in_orig):
     from rollout_config import Config
     from tensorflow_model import Code2VecModel
@@ -163,7 +164,7 @@ def c_code2vec_get_encodings(rundir,const_orig_codes,loops_idxs_in_orig):
 # runs the file after the pragma is injected and returns runtime
 def run_llvm_test_shell_command(rundir,filename):
     full_path_header = os.path.join(rundir,'header.c')
-    cmd1 = '/usr/bin/clang -O3 '+full_path_header+' ' +filename+' -o ' +filename[:-1]+'o'# TODO: fix path
+    cmd1 = '/usr/bin/clang -O3 -lm '+full_path_header+' ' +filename+' -o ' +filename[:-1]+'o'# TODO: fix path
     cmd2 = filename[:-1]+'o '
     os.system(cmd1)
     runtime=int(subprocess.Popen(cmd2, executable='/bin/bash', shell=True, stdout=subprocess.PIPE).stdout.read())
