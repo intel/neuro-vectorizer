@@ -116,7 +116,8 @@ class Config:
         self.PREDICT: bool = False   # TODO: update README;
         self.MODEL_SAVE_PATH: Optional[str] = None
         self.MODEL_LOAD_PATH: Optional[str] = None
-        self.TRAIN_DATA_PATH_PREFIX: Optional[str] = '/home/ameer/Desktop/rlvectorizer/llvm-project/build/NeuroVectorizer/code2vec/data/for_loops/for_loops'#None
+        NV_DIR = os.environ['NeuroVectorizer_DIR']
+        self.TRAIN_DATA_PATH_PREFIX: Optional[str] = NV_DIR + '/code2vec/data/for_loops/for_loops'#None
         self.TEST_DATA_PATH: Optional[str] = None
         self.RELEASE: bool = False
         self.EXPORT_CODE_VECTORS: bool = False
