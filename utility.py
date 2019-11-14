@@ -118,7 +118,7 @@ def c_code2vec_get_encodings(rundir,const_orig_codes,loops_idxs_in_orig):
             #print(code)
             encodings[key][idx] = code_vectors[0]
     model.close_session()
-    print(encodings)
+    #print(encodings)
     output = open(os.path.join(rundir,'c_code2vec_encodings.pkl'), 'wb')
     pickle.dump(encodings, output)
     output.close()
@@ -172,9 +172,6 @@ def run_llvm_test_shell_command(rundir,filename):
 
 # produces the new file with the pragma and compiles to get runtime
 def get_runtime(rundir,new_code,current_filename):
-    tf = open(current_filename,'w')
-    tf.write(''.join(new_code))
-    tf.close()
     runtime=run_llvm_test_shell_command(rundir,current_filename)
     return runtime
 

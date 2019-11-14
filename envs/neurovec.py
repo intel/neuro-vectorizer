@@ -23,6 +23,8 @@ class NeuroVectorizerEnv(gym.Env):
         self.dirpath = env_config.get('dirpath')
         self.new_rundir = env_config.get('new_rundir')
         self.train_code2vec = env_config.get('train_code2vec',True)
+        self.inference_mode = env_config.get('inference_mode', False)# whether or not in inference mode
+        self.compile = env_config.get('compile', True) #whether to compile the progarms or not, generally turned off in inference mode when it is not clear how to compile(e.g., requires make)
         cmd = 'rm -r ' +self.new_rundir
         print(cmd)
         os.system(cmd)
@@ -45,7 +47,7 @@ class NeuroVectorizerEnv(gym.Env):
         self.new_testfiles = list(self.pragmas_idxs.keys()) # to operate on files that actually have for loops
         self.current_file_idx = 0
         self.current_pragma_idx = 0
-        if not self.train_code2vec: # if you want to train on new data using code2vec or other code embedding without pregathered execution times
+        if not self.train_code2vec: # if you want to train on new data with pretrained code2vec or other code embedding without pregathered execution times
             self.obs_len = 384 # TODO: change obs_len based on your seting in code2vec or other code embedding 
             self.observation_space = spaces.Box(-1.0,1.0,shape=(self.obs_len,),dtype = np.float32)
             self.obs_encodings = c_code2vec_get_encodings(self.new_rundir,self.const_orig_codes,self.loops_idxs_in_orig)# TODO:change this to other code embedding if necessary 
@@ -62,23 +64,32 @@ class NeuroVectorizerEnv(gym.Env):
             self.path_extractor = CExtractor(self.config,clang_path=os.environ['CLANG_PATH'],max_leaves=MAX_LEAF_NODES)
             self.observation_space = spaces.Tuple([spaces.Box(0,10000,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]*3+[spaces.Box(0,10000.0,shape=(self.config.MAX_CONTEXTS,),dtype = np.float32)])
             self.train_input_reader = self.code2vec._create_data_reader(estimator_action=EstimatorAction.Train)
-        self.O3_runtimes=get_O3_runtimes(self.new_rundir,self.new_testfiles,self.vec_action_meaning,self.interleave_action_meaning)
+        if self.compile:
+            self.O3_runtimes=get_O3_runtimes(self.new_rundir,self.new_testfiles,self.vec_action_meaning,self.interleave_action_meaning)
+    
     #calculates the RL agent's reward
     def get_reward(self,new_code,current_filename):
-        runtime = get_runtime(self.new_rundir,new_code,current_filename)
-        if not self.train_code2vec:
-            if  self.current_pragma_idx+1 == self.num_loops[current_filename]:
+        f = open(current_filename,'w')
+        f.write(''.join(new_code))
+        f.close()
+        if self.compile:
+            runtime = get_runtime(self.new_rundir,new_code,current_filename)
+            reward = (self.O3_runtimes[current_filename]-runtime)/self.O3_runtimes[current_filename]
+            if self.inference_mode and self.current_pragma_idx+1 == self.num_loops[current_filename]: # in inference mode and finished inserting pragmas to this file
                 print('benchmark: ',current_filename,'O3 runtime: ', self.O3_runtimes[current_filename], 'RL runtime: ', runtime)
-        reward = (self.O3_runtimes[current_filename]-runtime)/self.O3_runtimes[current_filename]
+        else:
+            reward = 0 # can't calculate the reward without runtime
         return reward
 
     # RL reset function
     def reset(self):
         current_filename = self.new_testfiles[self.current_file_idx]
-        self.new_code = list(self.const_new_codes[current_filename])
+        if self.current_pragma_idx == 0 or not self.inference_mode: #this make sure that all RL pragmas remain in the code when inferencing
+            self.new_code = list(self.const_new_codes[current_filename])
         return self.get_obs(current_filename)
 
     # given a file returns the RL observation
+    # TODO: change this if you want other embeddings
     def get_obs(self,current_filename):
         if not self.train_code2vec:
             return self.obs_encodings[current_filename][self.current_pragma_idx]
@@ -120,7 +131,8 @@ class NeuroVectorizerEnv(gym.Env):
             self.current_file_idx += 1
             if self.current_file_idx == len(self.new_testfiles):
                 self.current_file_idx = 0
-                if not self.train_code2vec: # remove when open sourcing
+                if self.inference_mode:
+                    print('exiting after inferencing all programs')
                     exit(0) # finished all program/!
                 
             if not self.train_code2vec:
