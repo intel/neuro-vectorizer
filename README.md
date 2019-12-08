@@ -3,6 +3,7 @@ Neurovectorizer is a framework that uses deep reinforcement learning (RL) to pre
 
 Dependencies:
 TF2, Ray, RLlib, LLVM, and clang.
+
 The framework takes the text code of loops (detects them in the code) and uses an embedding generator. The output of this generator is fed to a neural network agent that predicts the optimal factors.
 
 There are two modes of operation of this framework:
