@@ -7,10 +7,10 @@ TF2, Ray, RLlib, LLVM, and clang.
 The framework takes the text code of loops (detects them in the code) and uses an embedding generator. The output of this generator is fed to a neural network agent that predicts the optimal factors.
 
 There are two modes of operation of this framework:
-1) If you decide to use a neural network as a code embedding generator, it might be better to train end-to-end (the gradients of the NN of the RL agents back propogate to the input of the embedding generator). In that case you just have to run `python autovec.py` and if necessary modify "autovec.py" or "envs/neurvec.py". Currently we implemented a neural network model based on code2vec. To use code2vec, you have first to run:
+1) If you decide to use a neural network as a code embedding generator, it might be better to train end-to-end (the gradients of the NN of the RL agents back propogate to the input of the embedding generator). In that case you just have to run `python autovec.py` and if necessary modify "autovec.py" or "envs/neurvec.py" (mainly to change hyperparameters). Currently we implemented a neural network model based on code2vec. To use code2vec, you have first to run:
 ```
 - cd preprocess
-- source ./configure.sh
+- source ./configure.sh //you need here to set some paths
 - source ./preprocess.sh //this will generate the bag of words of the training set for code2vec (the training set is in "training_data" feel free to add more samples
 - python autovec.py
 ```
