@@ -36,7 +36,6 @@ class NeuroVectorizerEnv(gym.Env):
         self.vec_action_meaning = [1,2,4,8,16,32,64] # TODO: change this to match your hardware
         self.interleave_action_meaning=[1,2,4,8,16] # TODO: change this to match your hardware
         self.action_space = spaces.Tuple([spaces.Discrete(len(self.vec_action_meaning)),spaces.Discrete(len(self.interleave_action_meaning))])
-        #TODO you might need to next line based on the size of your C code, max sure to replace 10000.0 with the highest value the parser generates
 
         self.testfiles = [os.path.join(root, name)
              for root, dirs, files in os.walk(self.new_rundir)
@@ -51,7 +50,7 @@ class NeuroVectorizerEnv(gym.Env):
             self.obs_len = 384 # TODO: change obs_len based on your seting in code2vec or other code embedding 
             self.observation_space = spaces.Box(-1.0,1.0,shape=(self.obs_len,),dtype = np.float32)
             self.obs_encodings = c_code2vec_get_encodings(self.new_rundir,self.const_orig_codes,self.loops_idxs_in_orig)# TODO:change this to other code embedding if necessary 
-        # this hsould be removed in later versions    
+            # this should be removed in later versions    
             self.vec_action_meaning = [1,2,4,8,16] # TODO: change this to match your hardware
             self.interleave_action_meaning=[1,2,4,8] # TODO: change this to match your hardware
             self.action_space = spaces.Tuple([spaces.Discrete(len(self.vec_action_meaning)),spaces.Discrete(len(self.interleave_action_meaning))])
@@ -62,6 +61,7 @@ class NeuroVectorizerEnv(gym.Env):
             self.config = Config(set_defaults=True, load_from_args=False, verify=True)
             self.code2vec = Code2VecModel(self.config)
             self.path_extractor = CExtractor(self.config,clang_path=os.environ['CLANG_PATH'],max_leaves=MAX_LEAF_NODES)
+             #TODO: you might need to next line based on the size of your C code, max sure to replace 10000.0 with the highest value the parser generates
             self.observation_space = spaces.Tuple([spaces.Box(0,10000,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]*3+[spaces.Box(0,10000.0,shape=(self.config.MAX_CONTEXTS,),dtype = np.float32)])
             self.train_input_reader = self.code2vec._create_data_reader(estimator_action=EstimatorAction.Train)
         if self.compile:
