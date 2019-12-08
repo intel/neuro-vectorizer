@@ -9,12 +9,12 @@ void example9 (unsigned *ret) {
 
   /* feature: support summation reduction.
      note: in case of floats use -funsafe-math-optimizations  */
-  unsigned int diff = 0;
+  unsigned int add = 0;
   for (i = 0; i < 4096; i++) {
-    diff += (ub[i] +uc[i]);
+    add += (ub[i] +uc[i]);
   }
 
-  *ret = diff;
+  *ret = add;
 }
 
 int main(int argc,char* argv[]){

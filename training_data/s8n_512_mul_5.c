@@ -17,6 +17,6 @@ int main(int argc,char* argv[]){
   init_memory(&o[0], &o[512]);
   init_memory(&i1[0], &i1[512]);
  
-  BENCH("Example7",   example7(4), Mi*8/512*512, digest_memory(&o[0], &o[512]));
+  BENCH("Example7",   example7(4), Mi/512*512, digest_memory(&o[0], &o[512]));
   return 0;
 }

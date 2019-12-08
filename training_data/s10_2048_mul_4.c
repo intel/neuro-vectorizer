@@ -9,12 +9,12 @@ void example9 (unsigned *ret) {
 
   /* feature: support summation reduction.
      note: in case of floats use -funsafe-math-optimizations  */
-  unsigned int sum_diff = 0;
+  unsigned int sum_mul = 0;
   for (i = 0; i < 2048; i++) {
-    sum_diff += (op1[i] *op2[i]);
+    sum_mul += (op1[i] *op2[i]);
   }
 
-  *ret = sum_diff;
+  *ret = sum_mul;
 }
 
 int main(int argc,char* argv[]){
