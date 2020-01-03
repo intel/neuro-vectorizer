@@ -2,7 +2,7 @@
 Neurovectorizer is a framework that uses deep reinforcement learning (RL) to predict optimal vectorization compiler pragmas for `for loops` in C and C++ codes. The framework currently integrates with the LLVM compiler and can inject vectorization and interleaving factors. It is possible to support unrolling factors too by adding it as an action in the RL environment. More details are available in the paper. This paper appeared in CGO2020 and Passed all the artifact evaluations for reproducability.
 
 Dependencies:
-TF2, Ray, RLlib, LLVM, and clang.
+TF2 (pip install tensorflow), Ray (pip install ray), RLlib (pip install ray[rllib]), LLVM (you need to have /usr/lib/llvm-X.Y/lib/libclang.so.1 or equivalent working), and clang (pip install clang).
 
 The framework takes the text code of loops (detects them in the code) and uses an embedding generator. The output of this generator is fed to a neural network agent that predicts the optimal factors.
 
