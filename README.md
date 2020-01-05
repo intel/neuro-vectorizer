@@ -1,4 +1,4 @@
-# NeuroVectorizer
+## NeuroVectorizer
 Neurovectorizer is a framework that uses deep reinforcement learning (RL) to predict optimal vectorization compiler pragmas for `for loops` in C and C++ codes. The framework currently integrates with the LLVM compiler and can inject vectorization and interleaving factors. It is possible to support unrolling factors too by adding it as an action in the RL environment. More details are available in the paper. This paper appeared in CGO2020 and Passed all the artifact evaluations for reproducability.
 
 Dependencies:
@@ -23,6 +23,9 @@ Note that this will take a long time to finish training.
 If you want to use another neural network in the embedding generator, you need to modify `get_obs` function in "envs/neurovec.py" and use that model in `autovec.py` (follow the TODOs in the code).
 
 2) If you do not need to do end-to-end training (for example a pretrained code embedding generator, or use your own embedding generator that is not necessarily neural networks, then you need to modify this line https://github.com/AmeerHajAli/NeuroVectorizer/blob/e5e162761e6b51889b085fec2999f4780c0f91ec/envs/neurovec.py#L52 if you are using a pickle file of all the embeddings or `get_obs` function in "envs/neurovec.py" to return your embedding if you want it to query the generator in each step.  
+
+# to rollout run:
+`python temp_rollout.py <~/ray_results/NeuroVectorizer/PPO_NeuroVectorizerEnv_*/checkpoint_*/checkpoint-*> --rollout_dir <./rollout_data>`
 
 Please reach out to Ameer Haj Ali for any questions.
 
