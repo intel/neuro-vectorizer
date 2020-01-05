@@ -56,7 +56,7 @@ CODE2VEC_LOC=../code2vec
 # SOURCE_DIR - top level folder for C source files
 SOURCE_DIR=../training_data
 # NeuroDectorier DIR
-export NeuroVectorizer_DIR=../NeuroVectorizer
+NeuroVectorizer_DIR=..
 
 ### Give or use less resources
 # MEM_PERCENT - for configurable commands like sort limit increase memory percentage to use
@@ -94,3 +94,5 @@ PYTHON=python3
 CODE2VEC_LOC=$(realpath ${CODE2VEC_LOC})
 CLANG_PATH=$(realpath ${CLANG_PATH})
 SOURCE_DIR=$(realpath ${SOURCE_DIR})
+NeuroVectorizer_DIR=$(realpath ${NeuroVectorizer_DIR})
+export PYTHONPATH=$CODE2VEC_LOC:$PYTHONPATH
