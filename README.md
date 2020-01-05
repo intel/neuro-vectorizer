@@ -26,6 +26,7 @@ If you want to use another neural network in the embedding generator, you need t
 
 # to run rollout/inference:
 `python temp_rollout.py <~/ray_results/NeuroVectorizer/PPO_NeuroVectorizerEnv_*/checkpoint_*/checkpoint-*> --rollout_dir <./rollout_data>`
+
 Note that this command will raise `ray.exceptions.RayActorError: The actor died unexpectedly before finishing this task`. This error is due to killing the ray worker after inferencing all the files. Ignore this error.
 
 
