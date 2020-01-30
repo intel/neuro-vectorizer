@@ -18,6 +18,7 @@ The framework takes the text code of loops (detects them in the code) and uses a
 There are two modes of operation of this framework:
 1) If you decide to use a neural network as a code embedding generator, it might be better to train end-to-end (the gradients of the NN of the RL agents back propogate to the input of the embedding generator). In that case you just have to run `python autovec.py` and if necessary modify "autovec.py" or "envs/neurvec.py" (mainly to change hyperparameters). Currently we implemented a neural network model based on code2vec. To use code2vec, you have first to run:
 ```
+- export PYTHONPATH=<path to code2vec, e.g., /some path/neuro-vectorizer/code2vec>:$PYTHONPATH
 - cd preprocess
 - source ./configure.sh //you need here to modify CODE2VEC_LOC and SOURCE_DIR to point to your files.
 - source ./preprocess.sh //this will generate the bag of words of the training set for code2vec (the training set is in "training_data" feel free to add more samples).
