@@ -80,8 +80,6 @@ class NeuroVectorizerEnv(gym.Env):
             self.observation_space = spaces.Box(-1.0,1.0,shape=(self.obs_len,),dtype = np.float32)
             self.obs_encodings = c_code2vec_get_encodings(self.new_rundir,self.const_orig_codes,self.loops_idxs_in_orig)# TODO:change this to other code embedding if necessary 
             # this should be removed in later versions    
-            self.vec_action_meaning = [1,2,4,8,16] # TODO: change this to match your hardware
-            self.interleave_action_meaning=[1,2,4,8] # TODO: change this to match your hardware
             self.action_space = spaces.Tuple([spaces.Discrete(len(self.vec_action_meaning)),spaces.Discrete(len(self.interleave_action_meaning))])
         else:
             from config import Config
