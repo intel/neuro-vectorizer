@@ -54,14 +54,14 @@ class NeuroVectorizerEnv(gym.Env):
         self.train_code2vec = env_config.get('train_code2vec',True)
         self.inference_mode = env_config.get('inference_mode', False)# whether or not in inference mode
         self.compile = env_config.get('compile', True) #whether to compile the progarms or not, generally turned off in inference mode when it is not clear how to compile(e.g., requires make)
-        cmd = 'rm -r ' +self.new_rundir
-        print(cmd)
-        os.system(cmd)
-        if not os.path.isdir(self.new_rundir):
+        if not os.path.exists(self.new_rundir):
             print('creating '+self.new_rundir+' directory')
             os.mkdir(self.new_rundir)
-            cmd = 'cp -r ' +self.dirpath+'/* ' +self.new_rundir
-            os.system(cmd)
+
+        cmd = 'cp -r ' +self.dirpath+'/* ' +self.new_rundir
+        print('running:',cmd)
+        os.system(cmd)
+
         self.vec_action_meaning = [1,2,4,8,16,32,64] # TODO: change this to match your hardware
         self.interleave_action_meaning=[1,2,4,8,16] # TODO: change this to match your hardware
         self.action_space = spaces.Tuple([spaces.Discrete(len(self.vec_action_meaning)),spaces.Discrete(len(self.interleave_action_meaning))])
@@ -87,6 +87,7 @@ class NeuroVectorizerEnv(gym.Env):
             from config import Config
             from my_model import Code2VecModel
             from path_context_reader import EstimatorAction
+            self.obs_encodings = {}
             self.config = Config(set_defaults=True, load_from_args=False, verify=True)
             self.code2vec = Code2VecModel(self.config)
             self.path_extractor = CExtractor(self.config,clang_path=os.environ['CLANG_PATH'],max_leaves=MAX_LEAF_NODES)
@@ -119,17 +120,28 @@ class NeuroVectorizerEnv(gym.Env):
 
     # given a file returns the RL observation
     # TODO: change this if you want other embeddings
-    def get_obs(self,current_filename):
+    def get_obs(self,current_filename,current_pragma_idx):
         if not self.train_code2vec:
-            return self.obs_encodings[current_filename][self.current_pragma_idx]
+            return self.obs_encodings[current_filename][current_pragma_idx]
+        
+        #check if this encoding already exists
+        try:
+            return self.obs_encodings[current_filename][current_pragma_idx]
+        except:
+            pass
+        
         #to get code for files not in the dataset
-        #code=get_snapshot_from_code(self.const_orig_codes[current_filename],self.loops_idxs_in_orig[current_filename][self.current_pragma_idx])
+        #code=get_snapshot_from_code(self.const_orig_codes[current_filename],self.loops_idxs_in_orig[current_filename][current_pragma_idx])
         code=get_snapshot_from_code(self.const_orig_codes[current_filename])
         input_full_path_filename=os.path.join(self.new_rundir,'my_code.c')
         loop_file=open(input_full_path_filename,'w')
         loop_file.write(''.join(code))
         loop_file.close()
-        train_lines, hash_to_string_dict = self.path_extractor.extract_paths(input_full_path_filename)
+        try:
+            train_lines, hash_to_string_dict = self.path_extractor.extract_paths(input_full_path_filename)
+        except:
+            print('Could not parse file',current_filename, 'loop index',current_pragma_idx,'. Try removing it.')
+            raise 
         dataset  = self.train_input_reader.process_and_iterate_input_from_data_lines(train_lines)
         obs = []
         tensors = list(dataset)[0][0]
@@ -138,6 +150,10 @@ class NeuroVectorizerEnv(gym.Env):
             with tf.compat.v1.Session() as sess: 
                 sess.run(tf.compat.v1.tables_initializer())
                 obs.append(tf.squeeze(tensor).eval())
+
+        if current_filename not in self.obs_encodings:
+            self.obs_encodings[current_filename] = {}
+        self.obs_encodings[current_filename][current_pragma_idx] = obs
         return obs
 
     # RL step function 
@@ -169,7 +185,7 @@ class NeuroVectorizerEnv(gym.Env):
             else:
                 obs = [[0]*200]*4
         else:
-            obs = self.get_obs(current_filename)
+            obs = self.get_obs(current_filename,self.current_pragma_idx)
             #done = False
         
         return obs,reward,done,{}

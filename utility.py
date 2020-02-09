@@ -32,6 +32,9 @@ import re
 import pickle
 import subprocess
 from extractor_c import CExtractor
+import logging
+
+logger = logging.getLogger(__name__)
 
 MAX_LEAF_NODES = 320
 pragma_line = '#pragma clang loop vectorize_width({0}) interleave_count({1})\n'
@@ -50,7 +53,8 @@ def get_bruteforce_runtimes(rundir,files,vec_actions,interleave_actions):
         for i,VF in enumerate(vec_action_meaning):
             for j,IF in enumerate(interleave_action_meaning):
                 rm_cmd = 'rm ' + filename[:-1]+'o '
-                os.system(rm_cmd)
+                if os.path.exists(filename[:-1]+'o'):
+                    os.system(rm_cmd)
                 cmd1 = 'timeout 4s /usr/bin/clang -O3 -lm '+full_path_header +' ' +filename+' -Rpass=loop-vectorize -mllvm -force-vector-width='+str(VF)+' -mllvm -force-vector-interleave='+str(IF)+' -o ' +filename[:-1]+'o'# TODO: fix path
                 os.system(cmd1)
                 cmd2 = filename[:-1]+'o '
@@ -58,6 +62,7 @@ def get_bruteforce_runtimes(rundir,files,vec_actions,interleave_actions):
                     runtime=int(subprocess.Popen(cmd2, executable='/bin/bash', shell=True, stdout=subprocess.PIPE).stdout.read())
                 except:
                     runtime = 1000000 #inf if fails replace with 5 times O3 runtimes
+                    logger.warning('Could not compile ' + filename + ' due to time out. Setting runtime to: '+str(runtime)+'.')
                 one_program_runtimes[i][j] = runtime
                 if runtime<opt_runtime:
                     opt_runtime = runtime
@@ -82,7 +87,8 @@ def get_O3_runtimes(rundir,files,vec_actions,interleave_actions):
     full_path_header = os.path.join(rundir,'header.c')
     for filename in files:
         rm_cmd = 'rm ' + filename[:-1]+'o '
-        os.system(rm_cmd)
+        if os.path.exists(filename[:-1]+'o'):
+            os.system(rm_cmd)
         cmd1 = 'timeout 2s /usr/bin/clang -O3 -lm '+full_path_header +' ' +filename+' -o ' +filename[:-1]+'o'# TODO: fix path
         print(cmd1)
         os.system(cmd1)
@@ -91,6 +97,7 @@ def get_O3_runtimes(rundir,files,vec_actions,interleave_actions):
             runtime=int(subprocess.Popen(cmd2, executable='/bin/bash', shell=True, stdout=subprocess.PIPE).stdout.read())
         except:
             runtime = 1000000 #inf if fails replace with 5 times O3 runtimes
+            logger.warning('Could not compile ' + filename + ' due to time out. Setting runtime to: '+str(runtime)+'.')
         O3_runtimes[filename]=runtime
 
     output = open(os.path.join(rundir,'O3_runtimes.pkl'), 'wb')

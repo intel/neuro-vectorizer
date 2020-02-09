@@ -92,7 +92,7 @@ PYTHON=python3
 
 # Don't edit below this line
 CODE2VEC_LOC=$(realpath ${CODE2VEC_LOC})
-CLANG_PATH=$(realpath ${CLANG_PATH})
+export CLANG_PATH=$(realpath ${CLANG_PATH})
 SOURCE_DIR=$(realpath ${SOURCE_DIR})
-NeuroVectorizer_DIR=$(realpath ${NeuroVectorizer_DIR})
+export NeuroVectorizer_DIR=$(realpath ${NeuroVectorizer_DIR})
 export PYTHONPATH=$CODE2VEC_LOC:$PYTHONPATH
