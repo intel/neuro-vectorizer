@@ -78,11 +78,12 @@ def get_bruteforce_runtimes(rundir,files,vec_actions,interleave_actions):
 
 # get all runetimes for O3 (baseline)
 def get_O3_runtimes(rundir,files,vec_actions,interleave_actions):
-#    try:
-#        with open('./O3_runtimes.pkl', 'rb') as f:
-#            return pickle.load(f)
-#    except:
-#        pass
+    try:
+        print('Checking if local O3_runtimes.pkl file exists to avoid waste of compilation.') 
+        with open(os.path.join(rundir,'O3_runtimes.pkl'), 'rb') as f:
+            return pickle.load(f)
+    except:
+        pass
     O3_runtimes={}
     full_path_header = os.path.join(rundir,'header.c')
     for filename in files:
@@ -285,7 +286,7 @@ def get_vectorized_codes(testfiles, new_testfiles):
         pragmas_idxs[n_fn] = list(pragmas_idx)
         const_new_codes[n_fn] = list(new_code)
         num_loops[n_fn] = len(pragmas_idx)
-        print('writing file...',n_fn)
+        logger.info('writing file... ' + n_fn)
         nf = open(n_fn,'w')
         nf.write(''.join(new_code))
         nf.close()
