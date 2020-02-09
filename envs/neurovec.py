@@ -93,7 +93,7 @@ class NeuroVectorizerEnv(gym.Env):
             self.observation_space = spaces.Tuple([spaces.Box(0,10000,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]*3+[spaces.Box(0,10000.0,shape=(self.config.MAX_CONTEXTS,),dtype = np.float32)])
             self.train_input_reader = self.code2vec._create_data_reader(estimator_action=EstimatorAction.Train)
         if self.compile:
-            self.O3_runtimes=get_O3_runtimes(self.new_rundir,self.new_testfiles,self.vec_action_meaning,self.interleave_action_meaning)
+            self.O3_runtimes=get_O3_runtimes(self.new_rundir,self.new_testfiles)
     
     #calculates the RL agent's reward
     def get_reward(self,new_code,current_filename):

@@ -41,7 +41,7 @@ pragma_line = '#pragma clang loop vectorize_width({0}) interleave_count({1})\n'
 
 #Used to get runtimes of brute force search, O3, and get code embeddings (currently implements code2vec code embedding)
 # get all runtimes with bruteforce seach
-def get_bruteforce_runtimes(rundir,files,vec_actions,interleave_actions):
+def get_bruteforce_runtimes(rundir,files,vec_action_meaning,interleave_action_meaning):
     opt_runtimes = {}
     opt_factors = {}
     all_program_runtimes = {}
@@ -77,7 +77,7 @@ def get_bruteforce_runtimes(rundir,files,vec_actions,interleave_actions):
 
 
 # get all runetimes for O3 (baseline)
-def get_O3_runtimes(rundir,files,vec_actions,interleave_actions):
+def get_O3_runtimes(rundir,files):
     try:
         print('Checking if local O3_runtimes.pkl file exists to avoid waste of compilation.') 
         with open(os.path.join(rundir,'O3_runtimes.pkl'), 'rb') as f:
