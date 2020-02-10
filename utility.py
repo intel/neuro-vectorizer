@@ -33,14 +33,24 @@ import pickle
 import subprocess
 from extractor_c import CExtractor
 import logging
+import copy
 
 logger = logging.getLogger(__name__)
 
 MAX_LEAF_NODES = 320
 pragma_line = '#pragma clang loop vectorize_width({0}) interleave_count({1})\n'
 
+# used to initialize runtimes dict that stores runtimes for all the files and loops for different VF/IF
+def init_runtimes_dict(files,num_loops,VF_len,IF_len):
+    runtimes = {}
+    one_program_runtimes = [[None]*IF_len for vf in range(VF_len)]
+    for f in files:
+        runtimes[f] = {}
+        for l in range(num_loops[f]):
+            runtimes[f][l] = copy.deepcopy(one_program_runtimes)
+    return runtimes
 #Used to get runtimes of brute force search, O3, and get code embeddings (currently implements code2vec code embedding)
-# get all runtimes with bruteforce seach
+# get all runtimes with bruteforce seach assuming a single loop per file!
 def get_bruteforce_runtimes(rundir,files,vec_action_meaning,interleave_action_meaning):
     opt_runtimes = {}
     opt_factors = {}

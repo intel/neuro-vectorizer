@@ -37,7 +37,7 @@ from extractor_c import CExtractor
 #from config import Config
 #from my_model import Code2VecModel
 #from path_context_reader import EstimatorAction
-from utility import get_bruteforce_runtimes, get_O3_runtimes, get_snapshot_from_code, get_runtime, get_vectorized_codes,c_code2vec_get_encodings
+from utility import get_bruteforce_runtimes, get_O3_runtimes, get_snapshot_from_code, get_runtime, get_vectorized_codes,c_code2vec_get_encodings, init_runtimes_dict
 import logging
 logger = logging.getLogger(__name__)
 #the number maximum number of leafs in the AST tree for code2vec
@@ -77,6 +77,7 @@ class NeuroVectorizerEnv(gym.Env):
         self.new_testfiles = list(self.pragmas_idxs.keys()) # to operate on files that actually have for loops
         self.current_file_idx = 0
         self.current_pragma_idx = 0
+        self.runtimes = init_runtimes_dict(self.new_testfiles,self.num_loops,len(self.vec_action_meaning),len(self.interleave_action_meaning))
         if not self.train_code2vec: # if you want to train on new data with pretrained code2vec or other code embedding without pregathered execution times
             self.obs_len = 384 # TODO: change obs_len based on your seting in code2vec or other code embedding 
             self.observation_space = spaces.Box(-1.0,1.0,shape=(self.obs_len,),dtype = np.float32)
@@ -98,12 +99,16 @@ class NeuroVectorizerEnv(gym.Env):
             self.O3_runtimes=get_O3_runtimes(self.new_rundir,self.new_testfiles)
     
     #calculates the RL agent's reward
-    def get_reward(self,new_code,current_filename):
+    def get_reward(self,new_code,current_filename,VF_idx,IF_idx):
         f = open(current_filename,'w')
         f.write(''.join(new_code))
         f.close()
         if self.compile:
-            runtime = get_runtime(self.new_rundir,new_code,current_filename)
+            if self.runtimes[current_filename][self.current_pragma_idx][VF_idx][IF_idx]:
+                runtime = self.runtimes[current_filename][self.current_pragma_idx][VF_idx][IF_idx]
+            else:            
+                runtime = get_runtime(self.new_rundir,new_code,current_filename)
+                self.runtimes[current_filename][self.current_pragma_idx][VF_idx][IF_idx]=runtime
             if self.O3_runtimes[current_filename]==None:
                 reward = 0
                 logger.warning('Program '+current_filename+' does not compile in two seconds. Consider removing it or increasing the timeout parameter in utility.py.')
@@ -173,7 +178,7 @@ class NeuroVectorizerEnv(gym.Env):
         IF = self.interleave_action_meaning[IF_idx]
         current_filename = self.new_testfiles[self.current_file_idx]
         self.new_code[self.pragmas_idxs[current_filename][self.current_pragma_idx]] = pragma_line.format(VF,IF)
-        reward = self.get_reward(self.new_code,current_filename)
+        reward = self.get_reward(self.new_code,current_filename,VF_idx,IF_idx)
         #print("VF",VF,"IF",IF)
         #print('reward:', reward, 'O3',self.O3_runtimes[current_filename])
         self.current_pragma_idx += 1
