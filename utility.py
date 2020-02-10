@@ -83,6 +83,7 @@ def get_O3_runtimes(rundir,files):
         with open(os.path.join(rundir,'O3_runtimes.pkl'), 'rb') as f:
             return pickle.load(f)
     except:
+        print('Did not find O3_runtimes.pkl...', 'Compiling to get -O3 runtimes.')
         pass
     O3_runtimes={}
     full_path_header = os.path.join(rundir,'header.c')
