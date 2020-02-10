@@ -71,7 +71,7 @@ class NeuroVectorizerEnv(gym.Env):
         self.testfiles = [os.path.join(root, name)
              for root, dirs, files in os.walk(self.new_rundir)
              for name in files
-             if name.endswith(".c") and not name.startswith('header.c')]
+             if name.endswith(".c") and not name.startswith('header.c') and not name.startswith('aux_code2vec_embedding_code.c')]
         self.new_testfiles = list(self.testfiles) # copy testfiles
         self.loops_idxs_in_orig,self.pragmas_idxs,self.const_new_codes,self.num_loops,self.const_orig_codes=get_vectorized_codes(self.testfiles,self.new_testfiles)
         self.new_testfiles = list(self.pragmas_idxs.keys()) # to operate on files that actually have for loops
@@ -140,7 +140,7 @@ class NeuroVectorizerEnv(gym.Env):
         #to get code for files not in the dataset
         #code=get_snapshot_from_code(self.const_orig_codes[current_filename],self.loops_idxs_in_orig[current_filename][current_pragma_idx])
         code=get_snapshot_from_code(self.const_orig_codes[current_filename])
-        input_full_path_filename=os.path.join(self.new_rundir,'my_code.c')
+        input_full_path_filename=os.path.join(self.new_rundir,'aux_code2vec_embedding_code.c')
         loop_file=open(input_full_path_filename,'w')
         loop_file.write(''.join(code))
         loop_file.close()
