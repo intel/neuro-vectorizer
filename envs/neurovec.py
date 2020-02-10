@@ -38,6 +38,8 @@ from extractor_c import CExtractor
 #from my_model import Code2VecModel
 #from path_context_reader import EstimatorAction
 from utility import get_bruteforce_runtimes, get_O3_runtimes, get_snapshot_from_code, get_runtime, get_vectorized_codes,c_code2vec_get_encodings
+import logging
+logger = logging.getLogger(__name__)
 #the number maximum number of leafs in the AST tree for code2vec
 MAX_LEAF_NODES = 320
 
@@ -102,11 +104,18 @@ class NeuroVectorizerEnv(gym.Env):
         f.close()
         if self.compile:
             runtime = get_runtime(self.new_rundir,new_code,current_filename)
-            reward = (self.O3_runtimes[current_filename]-runtime)/self.O3_runtimes[current_filename]
+            if self.O3_runtimes[current_filename]==None:
+                reward = 0
+                logger.warning('Program '+current_filename+' does not compile in two seconds. Consider removing it or increasing the timeout parameter in utility.py.')
+            elif runtime==None:
+                #penalizing for long compilation time for bad VF/IF
+                reward = -9
+            else:    
+                reward = (self.O3_runtimes[current_filename]-runtime)/self.O3_runtimes[current_filename]
             if self.inference_mode and self.current_pragma_idx+1 == self.num_loops[current_filename]: # in inference mode and finished inserting pragmas to this file
                 print('benchmark: ',current_filename,'O3 runtime: ', self.O3_runtimes[current_filename], 'RL runtime: ', runtime)
         else:
-            reward = 0 # can't calculate the reward without runtime
+            reward = 0 # can't calculate the reward without compile/runtime
         return reward
 
     # RL reset function

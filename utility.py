@@ -61,7 +61,7 @@ def get_bruteforce_runtimes(rundir,files,vec_action_meaning,interleave_action_me
                 try:
                     runtime=int(subprocess.Popen(cmd2, executable='/bin/bash', shell=True, stdout=subprocess.PIPE).stdout.read())
                 except:
-                    runtime = 1000000 #inf if fails replace with 5 times O3 runtimes
+                    runtime = None #None if fails
                     logger.warning('Could not compile ' + filename + ' due to time out. Setting runtime to: '+str(runtime)+'.')
                 one_program_runtimes[i][j] = runtime
                 if runtime<opt_runtime:
@@ -97,7 +97,7 @@ def get_O3_runtimes(rundir,files):
         try:
             runtime=int(subprocess.Popen(cmd2, executable='/bin/bash', shell=True, stdout=subprocess.PIPE).stdout.read())
         except:
-            runtime = 1000000 #inf if fails replace with 5 times O3 runtimes
+            runtime = None #None if fails
             logger.warning('Could not compile ' + filename + ' due to time out. Setting runtime to: '+str(runtime)+'.')
         O3_runtimes[filename]=runtime
 
@@ -201,10 +201,14 @@ def c_code2vec_get_encodings(rundir,const_orig_codes,loops_idxs_in_orig):
 # runs the file after the pragma is injected and returns runtime
 def run_llvm_test_shell_command(rundir,filename):
     full_path_header = os.path.join(rundir,'header.c')
-    cmd1 = '/usr/bin/clang -O3 -lm '+full_path_header+' ' +filename+' -o ' +filename[:-1]+'o'# TODO: fix path
+    cmd1 = 'timeout 4s /usr/bin/clang -O3 -lm '+full_path_header+' ' +filename+' -o ' +filename[:-1]+'o'# TODO: fix path
     cmd2 = filename[:-1]+'o '
     os.system(cmd1)
-    runtime=int(subprocess.Popen(cmd2, executable='/bin/bash', shell=True, stdout=subprocess.PIPE).stdout.read())
+    try:
+        runtime=int(subprocess.Popen(cmd2, executable='/bin/bash', shell=True, stdout=subprocess.PIPE).stdout.read())
+    except:
+        runtime = None #None if fails
+        logger.warning('Could not compile ' + filename + ' due to time out. Setting runtime to: '+str(runtime)+'.')
     return runtime
 
 # produces the new file with the pragma and compiles to get runtime
