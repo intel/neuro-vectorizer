@@ -123,7 +123,7 @@ class NeuroVectorizerEnv(gym.Env):
         current_filename = self.new_testfiles[self.current_file_idx]
         if self.current_pragma_idx == 0 or not self.inference_mode: #this make sure that all RL pragmas remain in the code when inferencing
             self.new_code = list(self.const_new_codes[current_filename])
-        return self.get_obs(current_filename)
+        return self.get_obs(current_filename,self.current_pragma_idx)
 
     # given a file returns the RL observation
     # TODO: change this if you want other embeddings
