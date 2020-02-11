@@ -136,6 +136,17 @@ def get_snapshot_from_code(code,loop_idx=None):
             new_code.append(line)
     return new_code
 
+# returns encodings from obs_encodings.pkl if file exists in rundir.
+def get_encodings_from_local(rundir):
+    encodings = {}
+    print('Checking if local obs_encodings.pkl file exists.') 
+    if os.path.exists(os.path.join(rundir,'obs_encodings.pkl')):
+        print('found local obs_encodings.pkl.')
+        with open(os.path.join(rundir,'obs_encodings.pkl'), 'rb') as f:
+            return pickle.load(f)
+    return encodings
+
+
 # works with old versions of code2vec
 def c_code2vec_get_encodings(rundir,const_orig_codes,loops_idxs_in_orig):
     from code2vec_old.model import Model
