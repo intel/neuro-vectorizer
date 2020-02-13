@@ -31,32 +31,29 @@ import ray
 import ray.tune as tune
 from ray.rllib.agents import ppo
 from envs.neurovec import NeuroVectorizerEnv
-from my_model import Code2VecModel
-from ray.rllib.models import ModelCatalog
 from ray.tune.registry import register_env
 
 from ray.tune.logger import TBXLogger
 
 ray.init()
-ModelCatalog.register_custom_model("my_model",Code2VecModel)
 register_env("autovec", lambda config:NeuroVectorizerEnv(config))
 
 tune.run("PPO",
         #"restore": "~/ray_results/PPO_*/checkpoint_240/checkpoint-240",
         checkpoint_freq  = 1,
         name = "neurovectorizer_tune",
-        stop = {"episodes_total": 500000},
+        stop = {"episodes_total": 100000},
         config={
             "sample_batch_size": 25,
-            "train_batch_size": 300,
-            "sgd_minibatch_size": 12,
-            "num_sgd_iter":12,
+            "train_batch_size": 500,
+            "sgd_minibatch_size": 20,
+            "num_sgd_iter":20,
             #"lr":5e-5,
             #"vf_loss_coeff":0.5,
             "env": "autovec",
             "horizon":  1,
             "num_gpus": 0,
-            "model":{'fcnet_hiddens':[64,64]},#{"custom_model": "my_model"},
+            "model":{'fcnet_hiddens':[128,128]},
             "num_workers": 1,
             "env_config":{'dirpath':'./training_data','new_rundir':'./new_garbage'}
             },

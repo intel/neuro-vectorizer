@@ -37,7 +37,7 @@ from extractor_c import CExtractor
 #from config import Config
 #from my_model import Code2VecModel
 #from path_context_reader import EstimatorAction
-from utility import get_bruteforce_runtimes, get_O3_runtimes, get_snapshot_from_code, get_runtime, get_vectorized_codes,c_code2vec_get_encodings, init_runtimes_dict
+from utility import get_bruteforce_runtimes, get_O3_runtimes, get_snapshot_from_code, get_runtime, get_vectorized_codes,c_code2vec_get_encodings, init_runtimes_dict, get_encodings_from_local
 import logging
 logger = logging.getLogger(__name__)
 #the number maximum number of leafs in the AST tree for code2vec
@@ -88,12 +88,15 @@ class NeuroVectorizerEnv(gym.Env):
             from config import Config
             from my_model import Code2VecModel
             from path_context_reader import EstimatorAction
-            self.obs_encodings = {}
+            self.obs_encodings = get_encodings_from_local(self.new_rundir)
             self.config = Config(set_defaults=True, load_from_args=False, verify=True)
             self.code2vec = Code2VecModel(self.config)
             self.path_extractor = CExtractor(self.config,clang_path=os.environ['CLANG_PATH'],max_leaves=MAX_LEAF_NODES)
-             #TODO: you might need to next line based on the size of your C code, max sure to replace 10000.0 with the highest value the parser generates
-            self.observation_space = spaces.Tuple([spaces.Box(0,10000,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]*3+[spaces.Box(0,10000.0,shape=(self.config.MAX_CONTEXTS,),dtype = np.float32)])
+             #TODO: you might need to next line based on the size of your C code, max sure to replace 500 with the highest value the parser generates
+            self.observation_space = spaces.Tuple([spaces.Box(0,113,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
+                                     +[spaces.Box(0,3609,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
+                                     +[spaces.Box(0,113,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
+                                     +[spaces.Box(0,1.0,shape=(self.config.MAX_CONTEXTS,),dtype = np.float32)])
             self.train_input_reader = self.code2vec._create_data_reader(estimator_action=EstimatorAction.Train)
         if self.compile:
             self.O3_runtimes=get_O3_runtimes(self.new_rundir,self.new_testfiles)
@@ -119,10 +122,23 @@ class NeuroVectorizerEnv(gym.Env):
                 reward = (self.O3_runtimes[current_filename]-runtime)/self.O3_runtimes[current_filename]
             if self.inference_mode and self.current_pragma_idx+1 == self.num_loops[current_filename]: # in inference mode and finished inserting pragmas to this file
                 print('benchmark: ',current_filename,'O3 runtime: ', self.O3_runtimes[current_filename], 'RL runtime: ', runtime)
+            VF = self.vec_action_meaning[VF_idx]
+            IF = self.interleave_action_meaning[IF_idx]
+            opt_runtime_sofar=self.get_opt_runtime(current_filename,self.current_pragma_idx)
+            logger.info(current_filename+' runtime '+str(runtime)+' O3 ' + str(self.O3_runtimes[current_filename]) +' reward '+reward+' opt '+str(opt_runtime_sofar)+" VF "+str(VF)+" IF "+IF)
         else:
             reward = 0 # can't calculate the reward without compile/runtime
+      
         return reward
 
+    def get_opt_runtime(self,current_filename,current_pragma_idx):
+        min_runtime = 1000000
+        for VF_idx in self.runtimes[current_filename][self.current_pragma_idx]:
+            for IF_idx in VF_idx:
+                if IF_idx:
+                    min_runtime = min(min_runtime,IF_idx)
+        return min_runtime
+                
     # RL reset function
     def reset(self):
         current_filename = self.new_testfiles[self.current_file_idx]
