@@ -32,16 +32,15 @@ import ray.tune as tune
 from ray.rllib.agents import ppo
 from envs.neurovec import NeuroVectorizerEnv
 from ray.tune.registry import register_env
-
 from ray.tune.logger import TBXLogger
 
 ray.init()
 register_env("autovec", lambda config:NeuroVectorizerEnv(config))
 
 tune.run("PPO",
-        #"restore": "~/ray_results/PPO_*/checkpoint_240/checkpoint-240",
+        #restore = "~/ray_results/PPO_*/checkpoint_240/checkpoint-240",
         checkpoint_freq  = 1,
-        name = "neurovectorizer_tune",
+        name = "neurovectorizer_train",
         stop = {"episodes_total": 100000},
         config={
             "sample_batch_size": 25,

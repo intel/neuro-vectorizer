@@ -34,12 +34,10 @@ import ray.tune as tune
 from ray.rllib.agents import ppo
 from envs.neurovec import NeuroVectorizerEnv
 import sys
-from my_model import Code2VecModel
-from ray.rllib.models import ModelCatalog
 from ray.tune.registry import register_env
+from ray.tune.logger import TBXLogger
 
 ray.init()
-ModelCatalog.register_custom_model("my_model",Code2VecModel)
 register_env("autovec", lambda config:NeuroVectorizerEnv(config))
 
 parser = argparse.ArgumentParser(description='given checkpoint and dir, run inference/rollout on the files in the dir.')
@@ -54,23 +52,21 @@ args = parser.parse_args()
     
 
 
-tune.run_experiments({
-    "NeuroVectorizer": {
-        "restore":args.checkpoint, 
-        "checkpoint_freq":1,
-        "max_failures":0,
-        "run": "PPO",
-        "env": NeuroVectorizerEnv,
-        "stop": {"episodes_total": 100000},
-        "config": {
+tune.run("PPO",
+        restore= args.checkpoint, 
+        checkpoint_freq  = 1,
+        name = "neurovectorizer_rollout",
+        stop = {"episodes_total": 100000},
+        config={
             "sample_batch_size": 100000,
             "train_batch_size": 100000,
             "sgd_minibatch_size": 100000,
+            "env": "autovec",
             "horizon":  1,
             "num_gpus": 0,
-            "model":{"custom_model": "my_model"},
+            "model":{'fcnet_hiddens':[128,128]},
             "num_workers": 1,
             "env_config":{'dirpath':args.rollout_dir,'new_rundir':'./new_rollout_garbage','inference_mode':True}
             },
-    },
-})
+        loggers=[TBXLogger]
+)

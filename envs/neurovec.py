@@ -125,7 +125,7 @@ class NeuroVectorizerEnv(gym.Env):
             VF = self.vec_action_meaning[VF_idx]
             IF = self.interleave_action_meaning[IF_idx]
             opt_runtime_sofar=self.get_opt_runtime(current_filename,self.current_pragma_idx)
-            logger.info(current_filename+' runtime '+str(runtime)+' O3 ' + str(self.O3_runtimes[current_filename]) +' reward '+reward+' opt '+str(opt_runtime_sofar)+" VF "+str(VF)+" IF "+IF)
+            logger.info(current_filename+' runtime '+str(runtime)+' O3 ' + str(self.O3_runtimes[current_filename]) +' reward '+str(reward)+' opt '+str(opt_runtime_sofar)+" VF "+str(VF)+" IF "+str(IF))
         else:
             reward = 0 # can't calculate the reward without compile/runtime
       
