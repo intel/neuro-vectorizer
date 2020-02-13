@@ -30,7 +30,8 @@ If you want to use another neural network in the embedding generator, you need t
 2) If you do not need to do end-to-end training (for example a pretrained code embedding generator, or use your own embedding generator that is not necessarily neural networks, then you need to modify this line https://github.com/AmeerHajAli/NeuroVectorizer/blob/e5e162761e6b51889b085fec2999f4780c0f91ec/envs/neurovec.py#L52 if you are using a pickle file of all the embeddings or `get_obs` function in "envs/neurovec.py" to return your embedding if you want it to query the generator in each step.  
 
 # to run rollout/inference on files in the provided dataset\*:
-`python temp_rollout.py <~/ray_results/NeuroVectorizer/PPO_NeuroVectorizerEnv_*/checkpoint_*/checkpoint-*> --rollout_dir <./rollout_data>`
+`python temp_rollout.py <~/ray_results/NeuroVectorizer/PPO_NeuroVectorizerEnv_*/checkpoint_*/checkpoint-*> --rollout_dir \
+<./rollout_data>`
 
 \* if it is not in the dataset then use this comment line:`https://github.com/ucb-bar/NeuroVectorizer/blob/94fc4e88ecf63dcae0f7860b969348ea29b8ae64/envs/neurovec.py#L126` instead of the line after.
 
