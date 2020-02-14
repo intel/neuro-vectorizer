@@ -37,9 +37,10 @@ The framework takes the text code of loops (detects them in the code) and uses a
 Note that this command will raise `ray.exceptions.RayActorError: The actor died unexpectedly before finishing this task`. This error is due to killing the ray worker after inferencing all the files. **Ignore this error**.
 
 # The provided pretrained model:
-A very basic pretrained model is provided as three checkpoints under ./checkpoints that you can use to navigate and exercise. 
-for example:
+A very basic pretrained model is provided as three checkpoints under `./checkpoints` that you can use to navigate and exercise. 
+For example:
 you can run `python temp_rollout.py checkpoints/checkpoint_100/checkpoint-100 --rollout_dir "./tests" --compile`
+
 
 
 Please reach out to Ameer Haj Ali for any questions.
