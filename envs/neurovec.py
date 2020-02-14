@@ -33,29 +33,65 @@ import pickle
 import numpy as np
 import re
 import os
-from extractor_c import CExtractor
-#from config import Config
-#from my_model import Code2VecModel
-#from path_context_reader import EstimatorAction
-from utility import get_bruteforce_runtimes, get_O3_runtimes, get_snapshot_from_code, get_runtime, get_vectorized_codes,c_code2vec_get_encodings, init_runtimes_dict, get_encodings_from_local
 import logging
+
+from extractor_c import CExtractor
+from config import Config
+from my_model import Code2VecModel
+from path_context_reader import EstimatorAction
+
+from utility import get_bruteforce_runtimes, get_O3_runtimes, get_snapshot_from_code, get_runtime, get_vectorized_codes, init_runtimes_dict, get_encodings_from_local, MAX_LEAF_NODES, pragma_line
+
 logger = logging.getLogger(__name__)
-#the number maximum number of leafs in the AST tree for code2vec
-MAX_LEAF_NODES = 320
-
-
-
-pragma_line = '#pragma clang loop vectorize_width({0}) interleave_count({1})\n'
-
 
 #NeuroVectorizer RL Environment
 class NeuroVectorizerEnv(gym.Env):
     def __init__(self, env_config):
+        self.init_from_env_config(env_config)
+        self.copy_train_data()
+        self.parse_train_data()
+        self.config_AST_parser()
+        self.init_RL_env()
+        # Keeps track of the file being processed currently.
+        self.current_file_idx = 0
+        # Keeps track of the current loop being processed currently in that file.
+        self.current_pragma_idx = 0
+        '''Runtimes dict to stored programs the RL agent explored.
+         This saves execution and compilation time due to dynamic programming.'''
+        self.runtimes = init_runtimes_dict(self.new_testfiles,self.num_loops,
+                        len(self.vec_action_meaning),len(self.interleave_action_meaning))
+        '''Observations dictionary to store AST encodings of programs explored by the RL agent. 
+        It saves time when the RL agent explores a program it explored before.
+        It is also initialized from obs_encodings.pkl file to further save time.''' 
+        self.obs_encodings = get_encodings_from_local(self.new_rundir)
+        
+        if self.compile:
+            # stores the runtimes of O3 to compute the RL reward and compared to -O3.
+            self.O3_runtimes=get_O3_runtimes(self.new_rundir,self.new_testfiles)
+    
+    def init_from_env_config(self,env_config):
+        '''Receives env_config and initalizes all config parameters.'''
+        # dirpath is the path to the train data.
         self.dirpath = env_config.get('dirpath')
-        self.new_rundir = env_config.get('new_rundir')
-        self.train_code2vec = env_config.get('train_code2vec',True)
-        self.inference_mode = env_config.get('inference_mode', False)# whether or not in inference mode
-        self.compile = env_config.get('compile', True) #whether to compile the progarms or not, generally turned off in inference mode when it is not clear how to compile(e.g., requires make)
+        # new_rundir is the directory to create and copy the train data to.
+        self.new_rundir = env_config.get('new_rundir') 
+        # whether or not in inference mode
+        self.inference_mode = env_config.get('inference_mode', False)
+        if self.inference_mode:
+            # Used in inference mode to print current geomean improvement.
+            self.improvements=[]
+        '''Whether to compile the progams or not, generally turned off 
+        in inference mode when it is not clear how to compile (e.g., requires make)
+        '''
+        self.compile = env_config.get('compile', True) 
+        #if your code is not structured like the given training data.
+        self.new_train_data = env_config.get('new_train_data',False) 
+    
+    def copy_train_data(self):
+        '''Copy the train data to a new directory.
+        used to inject pragmas in the new files,
+        without modifying original files.
+        '''
         if not os.path.exists(self.new_rundir):
             print('creating '+self.new_rundir+' directory')
             os.mkdir(self.new_rundir)
@@ -63,46 +99,49 @@ class NeuroVectorizerEnv(gym.Env):
         cmd = 'cp -r ' +self.dirpath+'/* ' +self.new_rundir
         print('running:',cmd)
         os.system(cmd)
-
+    
+    def init_RL_env(self):
+        ''' Defines the reinforcement leaning environment.
+        Modify to match your hardware and programs.
+        '''
         self.vec_action_meaning = [1,2,4,8,16,32,64] # TODO: change this to match your hardware
         self.interleave_action_meaning=[1,2,4,8,16] # TODO: change this to match your hardware
-        self.action_space = spaces.Tuple([spaces.Discrete(len(self.vec_action_meaning)),spaces.Discrete(len(self.interleave_action_meaning))])
-
-        self.testfiles = [os.path.join(root, name)
+        self.action_space = spaces.Tuple([spaces.Discrete(len(self.vec_action_meaning)),
+                                        spaces.Discrete(len(self.interleave_action_meaning))])
+        '''The observation space is bounded by the word dictionary 
+        the preprocessing generated. You might need to increase it.'''
+        self.observation_space = spaces.Tuple(
+                                 [spaces.Box(0,113,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
+                                 +[spaces.Box(0,3609,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
+                                 +[spaces.Box(0,113,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
+                                 +[spaces.Box(0,1.0,shape=(self.config.MAX_CONTEXTS,),dtype = np.float32)]
+                                 )
+    def parse_train_data(self):
+        ''' Parse the training data. '''
+        self.orig_train_files = [os.path.join(root, name)
              for root, dirs, files in os.walk(self.new_rundir)
              for name in files
-             if name.endswith(".c") and not name.startswith('header.c') and not name.startswith('aux_code2vec_embedding_code.c')]
-        self.new_testfiles = list(self.testfiles) # copy testfiles
-        self.loops_idxs_in_orig,self.pragmas_idxs,self.const_new_codes,self.num_loops,self.const_orig_codes=get_vectorized_codes(self.testfiles,self.new_testfiles)
-        self.new_testfiles = list(self.pragmas_idxs.keys()) # to operate on files that actually have for loops
-        self.current_file_idx = 0
-        self.current_pragma_idx = 0
-        self.runtimes = init_runtimes_dict(self.new_testfiles,self.num_loops,len(self.vec_action_meaning),len(self.interleave_action_meaning))
-        if not self.train_code2vec: # if you want to train on new data with pretrained code2vec or other code embedding without pregathered execution times
-            self.obs_len = 384 # TODO: change obs_len based on your seting in code2vec or other code embedding 
-            self.observation_space = spaces.Box(-1.0,1.0,shape=(self.obs_len,),dtype = np.float32)
-            self.obs_encodings = c_code2vec_get_encodings(self.new_rundir,self.const_orig_codes,self.loops_idxs_in_orig)# TODO:change this to other code embedding if necessary 
-            # this should be removed in later versions    
-            self.action_space = spaces.Tuple([spaces.Discrete(len(self.vec_action_meaning)),spaces.Discrete(len(self.interleave_action_meaning))])
-        else:
-            from config import Config
-            from my_model import Code2VecModel
-            from path_context_reader import EstimatorAction
-            self.obs_encodings = get_encodings_from_local(self.new_rundir)
-            self.config = Config(set_defaults=True, load_from_args=False, verify=True)
-            self.code2vec = Code2VecModel(self.config)
-            self.path_extractor = CExtractor(self.config,clang_path=os.environ['CLANG_PATH'],max_leaves=MAX_LEAF_NODES)
-             #TODO: you might need to next line based on the size of your C code, max sure to replace 500 with the highest value the parser generates
-            self.observation_space = spaces.Tuple([spaces.Box(0,113,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
-                                     +[spaces.Box(0,3609,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
-                                     +[spaces.Box(0,113,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
-                                     +[spaces.Box(0,1.0,shape=(self.config.MAX_CONTEXTS,),dtype = np.float32)])
-            self.train_input_reader = self.code2vec._create_data_reader(estimator_action=EstimatorAction.Train)
-        if self.compile:
-            self.O3_runtimes=get_O3_runtimes(self.new_rundir,self.new_testfiles)
+             if name.endswith(".c") and not name.startswith('header.c') 
+             and not name.startswith('aux_AST_embedding_code.c')]
+        # copy testfiles
+        self.new_testfiles = list(self.orig_train_files)
+        # parse the code to detect loops and inject commented pragmas.  
+        self.loops_idxs_in_orig,self.pragmas_idxs,self.const_new_codes,self.num_loops,self.const_orig_codes \
+        = get_vectorized_codes(self.orig_train_files,self.new_testfiles)
+        # to operate only on files that have for loops.
+        self.new_testfiles = list(self.pragmas_idxs.keys())
+ 
+    def config_AST_parser(self):
+        '''Config the AST tree parser.'''
+        self.config = Config(set_defaults=True, load_from_args=False, verify=True)
+        self.code2vec = Code2VecModel(self.config)
+        self.path_extractor = CExtractor(self.config,clang_path=os.environ['CLANG_PATH'],max_leaves=MAX_LEAF_NODES)
+        self.train_input_reader = self.code2vec._create_data_reader(estimator_action=EstimatorAction.Train)
     
-    #calculates the RL agent's reward
     def get_reward(self,new_code,current_filename,VF_idx,IF_idx):
+        '''Calculates the RL agent's reward. The reward is the 
+        execution time improvement after injecting the pragma
+        normalized to -O3.'''
         f = open(current_filename,'w')
         f.write(''.join(new_code))
         f.close()
@@ -114,54 +153,71 @@ class NeuroVectorizerEnv(gym.Env):
                 self.runtimes[current_filename][self.current_pragma_idx][VF_idx][IF_idx]=runtime
             if self.O3_runtimes[current_filename]==None:
                 reward = 0
-                logger.warning('Program '+current_filename+' does not compile in two seconds. Consider removing it or increasing the timeout parameter in utility.py.')
+                logger.warning('Program '+current_filename+' does not compile in two seconds.'+
+                               ' Consider removing it or increasing the timeout parameter'+
+                               ' in utility.py.')
             elif runtime==None:
                 #penalizing for long compilation time for bad VF/IF
                 reward = -9
             else:    
                 reward = (self.O3_runtimes[current_filename]-runtime)/self.O3_runtimes[current_filename]
-            if self.inference_mode and self.current_pragma_idx+1 == self.num_loops[current_filename]: # in inference mode and finished inserting pragmas to this file
-                print('benchmark: ',current_filename,'O3 runtime: ', self.O3_runtimes[current_filename], 'RL runtime: ', runtime)
+            # In inference mode and finished inserting pragmas to this file.
+            if self.inference_mode and self.current_pragma_idx+1 == self.num_loops[current_filename]:
+                improvement = self.O3_runtimes[current_filename]/runtime
+                self.improvements.append(improvement)
+                geomean = 1
+                for imp in self.improvements:
+                    geomean = geomean * (imp**(1/len(self.improvements))) 
+                print('benchmark: ',current_filename,'O3 runtime: ', 
+                      self.O3_runtimes[current_filename], 'RL runtime: ', runtime,
+                      'improvement:',str(round(improvement,2))+'X',
+                      'improvement geomean so far:',str(round(geomean,2))+'X')
             VF = self.vec_action_meaning[VF_idx]
             IF = self.interleave_action_meaning[IF_idx]
             opt_runtime_sofar=self.get_opt_runtime(current_filename,self.current_pragma_idx)
-            logger.info(current_filename+' runtime '+str(runtime)+' O3 ' + str(self.O3_runtimes[current_filename]) +' reward '+str(reward)+' opt '+str(opt_runtime_sofar)+" VF "+str(VF)+" IF "+str(IF))
+            logger.info(current_filename+' runtime '+str(runtime)+' O3 ' + 
+                        str(self.O3_runtimes[current_filename]) +' reward '+str(reward)+
+                        ' opt '+str(opt_runtime_sofar)+" VF "+str(VF)+" IF "+str(IF))
         else:
-            reward = 0 # can't calculate the reward without compile/runtime
+            # can't calculate the reward without compile/runtime.
+            reward = 0
       
         return reward
 
     def get_opt_runtime(self,current_filename,current_pragma_idx):
-        min_runtime = 1000000
+        min_runtime = float('inf')
         for VF_idx in self.runtimes[current_filename][self.current_pragma_idx]:
             for IF_idx in VF_idx:
                 if IF_idx:
                     min_runtime = min(min_runtime,IF_idx)
         return min_runtime
                 
-    # RL reset function
     def reset(self):
+        ''' RL reset environment function. '''
         current_filename = self.new_testfiles[self.current_file_idx]
-        if self.current_pragma_idx == 0 or not self.inference_mode: #this make sure that all RL pragmas remain in the code when inferencing
+        #this make sure that all RL pragmas remain in the code when inferencing.
+        if self.current_pragma_idx == 0 or not self.inference_mode:
             self.new_code = list(self.const_new_codes[current_filename])
         return self.get_obs(current_filename,self.current_pragma_idx)
 
-    # given a file returns the RL observation
-    # TODO: change this if you want other embeddings
     def get_obs(self,current_filename,current_pragma_idx):
-        if not self.train_code2vec:
-            return self.obs_encodings[current_filename][current_pragma_idx]
+        '''Given a file returns the RL observation.
+           Change this if you want other embeddings.'''
         
-        #check if this encoding already exists
+        #Check if this encoding already exists (parsed before).
         try:
             return self.obs_encodings[current_filename][current_pragma_idx]
         except:
             pass
         
-        #to get code for files not in the dataset
-        #code=get_snapshot_from_code(self.const_orig_codes[current_filename],self.loops_idxs_in_orig[current_filename][current_pragma_idx])
-        code=get_snapshot_from_code(self.const_orig_codes[current_filename])
-        input_full_path_filename=os.path.join(self.new_rundir,'aux_code2vec_embedding_code.c')
+        # To get code for files not in the dataset.
+        if self.new_train_data:
+            code=get_snapshot_from_code(self.const_orig_codes[current_filename],
+                                        self.loops_idxs_in_orig[current_filename][current_pragma_idx])
+        else:
+            code=get_snapshot_from_code(self.const_orig_codes[current_filename])
+
+        input_full_path_filename=os.path.join(self.new_rundir,'aux_AST_embedding_code.c')
         loop_file=open(input_full_path_filename,'w')
         loop_file.write(''.join(code))
         loop_file.close()
@@ -184,9 +240,10 @@ class NeuroVectorizerEnv(gym.Env):
         self.obs_encodings[current_filename][current_pragma_idx] = obs
         return obs
 
-    # RL step function 
     def step(self,action):
-        done = True # horizon = 1 
+        '''The RL environment step function. Takes action and applies it as
+        VF/IF pragma for the parsed loop.'''
+        done = True # RL horizon = 1 
         action = list(np.reshape(np.array(action),(np.array(action).shape[0],)))
         VF_idx = action[0]
         IF_idx = action[1]
@@ -199,21 +256,17 @@ class NeuroVectorizerEnv(gym.Env):
         #print('reward:', reward, 'O3',self.O3_runtimes[current_filename])
         self.current_pragma_idx += 1
         if self.current_pragma_idx == self.num_loops[current_filename]:
-            #done = True
             self.current_pragma_idx=0
             self.current_file_idx += 1
             if self.current_file_idx == len(self.new_testfiles):
                 self.current_file_idx = 0
                 if self.inference_mode:
                     print('exiting after inferencing all programs')
-                    exit(0) # finished all program/!
-                
-            if not self.train_code2vec:
-                obs =[0]*self.obs_len
-            else:
-                obs = [[0]*200]*4
+                    exit(0) # finished all programs!
+            '''Change next line for new observation spaces
+            to a matrix of zeros.'''
+            obs = [[0]*200]*4
         else:
             obs = self.get_obs(current_filename,self.current_pragma_idx)
-            #done = False
         
         return obs,reward,done,{}
