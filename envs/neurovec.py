@@ -109,12 +109,12 @@ class NeuroVectorizerEnv(gym.Env):
         self.action_space = spaces.Tuple([spaces.Discrete(len(self.vec_action_meaning)),
                                         spaces.Discrete(len(self.interleave_action_meaning))])
         '''The observation space is bounded by the word dictionary 
-        the preprocessing generated. You might need to increase it.'''
+        the preprocessing generated.'''
         self.observation_space = spaces.Tuple(
-                                 [spaces.Box(0,113,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
-                                 +[spaces.Box(0,3609,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
-                                 +[spaces.Box(0,113,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
-                                 +[spaces.Box(0,1.0,shape=(self.config.MAX_CONTEXTS,),dtype = np.float32)]
+                                 [spaces.Box(0,self.code2vec.vocabs.token_vocab.size,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
+                                 +[spaces.Box(0,self.code2vec.vocabs.path_vocab.size,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
+                                 +[spaces.Box(0,self.code2vec.vocabs.token_vocab.size,shape=(self.config.MAX_CONTEXTS,),dtype = np.int32,)]
+                                 +[spaces.Box(0,1,shape=(self.config.MAX_CONTEXTS,),dtype = np.bool)]
                                  )
     def parse_train_data(self):
         ''' Parse the training data. '''
