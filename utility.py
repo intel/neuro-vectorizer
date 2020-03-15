@@ -72,7 +72,7 @@ def get_bruteforce_runtimes(rundir,files,vec_action_meaning,
                 rm_cmd = 'rm ' + filename[:-1]+'o '
                 if os.path.exists(filename[:-1]+'o'):
                     os.system(rm_cmd)
-                cmd1 = 'timeout 4s /usr/bin/clang -O3 -lm '+full_path_header
+                cmd1 = 'timeout 4s ' + os.environ['CLANG_BIN_PATH'] + ' -O3 -lm '+full_path_header
                 +' ' +filename+' -Rpass=loop-vectorize -mllvm -force-vector-width='
                 +str(VF)+' -mllvm -force-vector-interleave='+str(IF)
                 +' -o ' +filename[:-1]+'o'
@@ -114,7 +114,7 @@ def get_O3_runtimes(rundir,files):
         rm_cmd = 'rm ' + filename[:-1]+'o '
         if os.path.exists(filename[:-1]+'o'):
             os.system(rm_cmd)
-        cmd1 = 'timeout 2s /usr/bin/clang -O3 -lm '+full_path_header +' ' +filename+' -o ' +filename[:-1]+'o'
+        cmd1 = 'timeout 2s ' + os.environ['CLANG_BIN_PATH'] +  ' -O3 -lm '+full_path_header +' ' +filename+' -o ' +filename[:-1]+'o'
         print(cmd1)
         os.system(cmd1)
         cmd2 = filename[:-1]+'o '
@@ -169,7 +169,7 @@ def run_llvm_test_shell_command(rundir,filename):
     '''runs the file after the pragma is injected 
     and returns runtime.'''
     full_path_header = os.path.join(rundir,'header.c')
-    cmd1 = 'timeout 4s /usr/bin/clang -O3 -lm '+full_path_header \
+    cmd1 = 'timeout 4s '+ os.environ['CLANG_BIN_PATH'] + ' -O3 -lm '+full_path_header \
     +' ' +filename+' -o ' +filename[:-1]+'o'
     cmd2 = filename[:-1]+'o '
     os.system(cmd1)
