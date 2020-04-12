@@ -23,6 +23,7 @@ The framework takes the text code of loops (detects them in the code) and uses a
 - python autovec.py
 ```
 **Important notes:**
+- Some of the error messages when running `source ./preprocess.sh` are dumped to `code2vec/data/for_loops/stderr.txt`.
 - Training might take a long time to finish.
 - autovec.py uses the RLLib/TUNE API explained here: https://ray.readthedocs.io/en/latest/tune-package-ref.html.
 - O3_runtimes.pkl and obs_encodings.pkl are provided in `./training_data`. O3_runtimes.pkl stores the -O3 runtimes on Intel® AVX Intel® Xeon® Processor E5-2667 v2 and obs_encodings.pkl stores the encodings of the AST programs so that you don't have to recompute it when training on the training data. **If you have another Processor, remove O3_runtimes.pkl or else it will use -O3 runtimes based on the wrong processor**!
