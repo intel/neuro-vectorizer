@@ -67,14 +67,24 @@ class NeuroVectorizerEnv(gym.Env):
         
         if self.compile:
             # stores the runtimes of O3 to compute the RL reward and compared to -O3.
-            self.O3_runtimes=get_O3_runtimes(self.new_rundir,self.new_testfiles)
+            self.O3_runtimes = get_O3_runtimes(self.new_rundir, self.new_testfiles)
+            runtimes_with_pid = {}
+            for key in self.O3_runtimes:
+                value = self.O3_runtimes[key]
+                
+                # assumes keys are of the format ./dirname/...
+                key_components = key[2:].split('/')     # removes the `./` prefix
+                key_components[0] = self.new_rundir
+                key = '/'.join(key_components)
+                runtimes_with_pid[key] = value
+            self.O3_runtimes = runtimes_with_pid
     
     def init_from_env_config(self,env_config):
         '''Receives env_config and initalizes all config parameters.'''
         # dirpath is the path to the train data.
         self.dirpath = env_config.get('dirpath')
         # new_rundir is the directory to create and copy the train data to.
-        self.new_rundir = env_config.get('new_rundir') 
+        self.new_rundir = env_config.get('new_rundir') + str(os.getpid())
         # whether or not in inference mode
         self.inference_mode = env_config.get('inference_mode', False)
         if self.inference_mode:

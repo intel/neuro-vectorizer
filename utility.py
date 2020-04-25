@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 
 #the maximum number of leafs in the LLVM abstract sytnax tree
 MAX_LEAF_NODES = 320
+TEST_SHELL_COMMAND_TIMEOUT = '50s'
 # pragma line injected for each loop
 pragma_line = '#pragma clang loop vectorize_width({0}) interleave_count({1})\n'
 
@@ -168,8 +169,8 @@ def get_encodings_from_local(rundir):
 def run_llvm_test_shell_command(rundir,filename):
     '''runs the file after the pragma is injected 
     and returns runtime.'''
-    full_path_header = os.path.join(rundir,'header.c')
-    cmd1 = 'timeout 4s '+ os.environ['CLANG_BIN_PATH'] + ' -O3 -lm '+full_path_header \
+    full_path_header = os.path.join(rundir, 'header.c')
+    cmd1 = 'timeout ' + TEST_SHELL_COMMAND_TIMEOUT + ' ' + os.environ['CLANG_BIN_PATH'] + ' -O3 -lm '+full_path_header \
     +' ' +filename+' -o ' +filename[:-1]+'o'
     cmd2 = filename[:-1]+'o '
     os.system(cmd1)
@@ -179,8 +180,8 @@ def run_llvm_test_shell_command(rundir,filename):
         runtime = None #None if fails
         logger.warning('Could not compile ' + filename +  
                        ' due to time out. Setting runtime to: ' + 
-                       str(runtime)+'. Considering increasing the timeout,'+ 
-                       ' which is currently set to 4 seconds.')
+                       str(runtime)+'. Considering increasing the TEST_SHELL_COMMAND_TIMEOUT,'+ 
+                       ' which is currently set to ' + TEST_SHELL_COMMAND_TIMEOUT)
     return runtime
 
 def get_runtime(rundir,new_code,current_filename):
