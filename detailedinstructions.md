@@ -1,22 +1,10 @@
 # Install Instructions for Neurovectorizer on Ubuntu 18.04
 ----
 #### Table of Contents:
-1. [Rise Specific Directory Setup](#directory-setup) 
-2. [Installing Anaconda, CMAKE, and LLVM](#anaconda-cmake-llvm)
-3. [Install Neurovectorizer Dependencies](#install-neurovectorizer-dependencies)  
-4. [Edit configure&#46;sh](#edit-configure)
-
-####  Directory Setup: 
-----
-We've discovered that the default working directory /home/eecs/[username] is far slower than working inside of /data directory so this should be your working directory.
- ```
- cd /data/
- mkdir [your username]
- cd [your username]
- mkdir dependencies
-```
-You may want to change your $HOME to point to /data/[username] for ease of access in the future.   
-
+1. [Installing Anaconda, CMAKE, and LLVM](#anaconda-cmake-llvm)
+2. [Install Neurovectorizer Dependencies](#install-neurovectorizer-dependencies)  
+3. [Edit configure&#46;sh](#edit-configure)
+4. [RISELab Students Directory Setup on Clusters](#directory-setup)
 
 #### Anaconda CMAKE LLVM: 
 ----
@@ -59,3 +47,14 @@ Note the following is using the Rise Specific Directory Setup, so make adjustmen
 CLANG_PATH=/data/[username]/dependencies/llvm-project/build/lib/libclang.so
 CLANG_BIN_PATH=/data/[username]/anaconda3/bin/clang
 ```
+
+####  Directory Setup: 
+----
+The default working directory /home/eecs/[username] is far slower than working inside of /data directory so this should be your working directory.
+ ```
+ cd /data/
+ mkdir [your username]
+ cd [your username]
+ mkdir dependencies
+```
+You may want to change your $HOME to point to /data/[username] for ease of access in the future.   
