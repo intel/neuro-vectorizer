@@ -2,9 +2,9 @@
 ----
 #### Table of Contents:
 1. [Rise Specific Directory Setup](#directory-setup) 
-2. [Installing Anaconda, CMAKE, and LLVM](#install-anaconda,-cmake,-and-llvm)
+2. [Installing Anaconda, CMAKE, and LLVM](#anaconda-cmake-llvm)
 3. [Install Neurovectorizer Dependencies](#install-neurovectorizer-dependencies)  
-4. [Edit configure&#46;sh](#edit-configure.sh)
+4. [Edit configure&#46;sh](#edit-configure)
 
 ####  Directory Setup: 
 ----
@@ -18,7 +18,7 @@ We've discovered that the default working directory /home/eecs/[username] is far
 You may want to change your $HOME to point to /data/[username] for ease of access in the future.   
 
 
-#### Install Anaconda, CMAKE, and LLVM: 
+#### Anaconda CMAKE LLVM: 
 ----
 Skip any dependency you already have.
 ```
@@ -52,7 +52,7 @@ pip install ray[rllib]
 pip install clang
 ```  
 
-#### Edit configure.sh:
+#### Edit configure:
 ----
 Note the following is using the Rise Specific Directory Setup, so make adjustments as necessary. Change the folllowing lines:
 ```
