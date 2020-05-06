@@ -11,7 +11,7 @@
 Skip any dependency you already have.
 ```
 wget https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_64.sh
-bash Anaconda3-2020.02-Linux-x86_64.sh  # Make sure to install in /data/username/ when asked rather than HOME
+bash Anaconda3-2020.02-Linux-x86_64.sh  # RISELab Students make sure to install in /data/[username]/ when asked rather than HOME
 wget https://github.com/Kitware/CMake/releases/download/v3.17.1/cmake-3.17.1-Linux-x86_64.tar.gz
 tar xzf cmake-3.17.0.tar.gz
 cd cmake-3.17.0
@@ -42,7 +42,7 @@ pip install clang
 
 #### Edit configure:
 ----
-Note the following is using the Rise Specific Directory Setup, so make adjustments as necessary. Change the folllowing lines:
+Note the following paths are specific to the RISELab directory setup on clusters, so make adjustments as necessary. Change the folllowing lines:
 ```
 CLANG_PATH=/data/[username]/dependencies/llvm-project/build/lib/libclang.so
 CLANG_BIN_PATH=/data/[username]/anaconda3/bin/clang
