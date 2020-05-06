@@ -3,8 +3,8 @@
 #### Table of Contents:
 1. [Rise Specific Directory Setup](#directory-setup) 
 2. [Installing Anaconda, CMAKE, and LLVM](#install-anaconda,-cmake,-and-llvm)
-3. [Install Neurovectorizer Dependencies](#install-neurovectorizer-specific-dependencies)  
-4. [Edit configure&#46;sh](#edit-configure&#46;sh)
+3. [Install Neurovectorizer Dependencies](#install-neurovectorizer-dependencies)  
+4. [Edit configure&#46;sh](#edit-configure.sh)
 
 ####  Directory Setup: 
 ----
@@ -52,7 +52,7 @@ pip install ray[rllib]
 pip install clang
 ```  
 
-#### Edit configure&#46;sh:
+#### Edit configure.sh:
 ----
 Note the following is using the Rise Specific Directory Setup, so make adjustments as necessary. Change the folllowing lines:
 ```
