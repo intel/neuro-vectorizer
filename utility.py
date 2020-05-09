@@ -38,8 +38,8 @@ import copy
 logger = logging.getLogger(__name__)
 
 #the maximum number of leafs in the LLVM abstract sytnax tree
-MAX_LEAF_NODES = 320
-TEST_SHELL_COMMAND_TIMEOUT = '50s'
+MAX_LEAF_NODES = os.environ['MAX_LEAF_NODES']
+TEST_SHELL_COMMAND_TIMEOUT = os.environ['TEST_SHELL_COMMAND_TIMEOUT']
 # pragma line injected for each loop
 pragma_line = '#pragma clang loop vectorize_width({0}) interleave_count({1})\n'
 
