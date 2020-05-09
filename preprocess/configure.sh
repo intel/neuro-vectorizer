@@ -92,6 +92,9 @@ TARGET_VOCAB_SIZE=261245
 NUM_THREADS=64
 PYTHON=python3
 
+MAX_LEAF_NODES=320
+TEST_SHELL_COMMAND_TIMEOUT=50s
+
 # Don't edit below this line
 CODE2VEC_LOC=$(realpath ${CODE2VEC_LOC})
 export CLANG_PATH=$(realpath ${CLANG_PATH})
@@ -99,3 +102,5 @@ SOURCE_DIR=$(realpath ${SOURCE_DIR})
 export NeuroVectorizer_DIR=$(realpath ${NeuroVectorizer_DIR})
 export PYTHONPATH=$CODE2VEC_LOC:$PYTHONPATH
 export CLANG_BIN_PATH=$(realpath ${CLANG_BIN_PATH})
+export MAX_LEAF_NODES=$(realpath ${MAX_LEAF_NODES})
+export TEST_SHELL_COMMAND_TIMEOUT=$(realpath ${TEST_SHELL_COMMAND_TIMEOUT})
