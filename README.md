@@ -11,7 +11,9 @@ Dependencies:
 - Ray (`pip install ray`).
 - RLlib (`pip install ray[rllib]`).
 - LLVM (you need to have `/usr/lib/llvm-X.Y/lib/libclang.so.1` or equivalent working). Currently tested with `/usr/lib/llvm-6.0/lib/libclang.so.1`.
-- clang (`pip install clang`). Current tested version is clang-6.0.0.2.
+- clang (`pip install clang`). Current tested version is clang-6.0.0.2.  
+
+For more detailed install instructions tested on Ubuntu click [here.](detailedinstructions.md)
 
 The framework takes the text code of loops (detects them in the code) and uses an AST embedding generator. The output of this generator is fed to a neural network agent that predicts the optimal factors.
 
