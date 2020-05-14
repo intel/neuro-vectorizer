@@ -74,7 +74,7 @@ class NeuroVectorizerEnv(gym.Env):
         # dirpath is the path to the train data.
         self.dirpath = env_config.get('dirpath')
         # new_rundir is the directory to create and copy the train data to.
-        self.new_rundir = env_config.get('new_rundir')
+        self.new_rundir = env_config.get('new_rundir') + str(os.getpid())
         # whether or not in inference mode
         self.inference_mode = env_config.get('inference_mode', False)
         if self.inference_mode:
