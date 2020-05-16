@@ -99,13 +99,23 @@ def get_bruteforce_runtimes(rundir,files,vec_action_meaning,
     pickle.dump(data, output)
     output.close()
 
+def append_pid(contents):
+    new_contents = {} 
+    for content in contents:
+        value = contents[content] 
+        key_components = content[2:].split('/')     # removes the `./` prefix
+        key_components[0] = key_components[0] + '_' + str(os.getpid())
+        print(key_components[0])
+        key = '/'.join(key_components)
+        new_contents[key] = value
+    return new_contents 
 
 def get_O3_runtimes(rundir,files):
     '''get all runetimes for O3 (baseline).'''
     try:
         print('Checking if local O3_runtimes.pkl file exists to avoid waste of compilation.') 
         with open(os.path.join(rundir,'O3_runtimes.pkl'), 'rb') as f:
-            return pickle.load(f)
+            return append_pid(pickle.load(f))
     except:
         print('Did not find O3_runtimes.pkl...', 'Compiling to get -O3 runtimes.')
         pass
@@ -163,7 +173,7 @@ def get_encodings_from_local(rundir):
     if os.path.exists(os.path.join(rundir,'obs_encodings.pkl')):
         print('found local obs_encodings.pkl.')
         with open(os.path.join(rundir,'obs_encodings.pkl'), 'rb') as f:
-            return pickle.load(f)
+            return append_pid(pickle.load(f))
     return encodings
 
 def run_llvm_test_shell_command(rundir,filename):
