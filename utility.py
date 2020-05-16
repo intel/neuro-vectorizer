@@ -105,7 +105,6 @@ def append_pid(contents):
         value = contents[content] 
         key_components = content[2:].split('/')     # removes the `./` prefix
         key_components[0] = key_components[0] + '_' + str(os.getpid())
-        print(key_components[0])
         key = '/'.join(key_components)
         new_contents[key] = value
     return new_contents 
