@@ -112,7 +112,7 @@ def rename_contents(rundir, contents):
     return new_contents 
 
 def get_O3_runtimes(rundir,files):
-    '''Get all runetimes for O3 (baseline).'''
+    '''get all runetimes for O3 (baseline).'''
     try:
         print('Checking if local O3_runtimes.pkl file exists to avoid waste of compilation.') 
         with open(os.path.join(rundir,'O3_runtimes.pkl'), 'rb') as f:
