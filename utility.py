@@ -38,7 +38,8 @@ import copy
 logger = logging.getLogger(__name__)
 
 #the maximum number of leafs in the LLVM abstract sytnax tree
-MAX_LEAF_NODES = 320
+MAX_LEAF_NODES = os.environ['MAX_LEAF_NODES']
+TEST_SHELL_COMMAND_TIMEOUT = os.environ['TEST_SHELL_COMMAND_TIMEOUT']
 # pragma line injected for each loop
 pragma_line = '#pragma clang loop vectorize_width({0}) interleave_count({1})\n'
 
@@ -98,13 +99,24 @@ def get_bruteforce_runtimes(rundir,files,vec_action_meaning,
     pickle.dump(data, output)
     output.close()
 
+def rename_contents(rundir, contents):
+    '''Takes in a run directory, and the contents of the pkl file, renames the directory of the contents
+    of the pkl file based on the new rundir specified. It is useful when the user reuses the provided pkl
+    file with new rundir.'''
+    new_contents = {} 
+    for key in contents.keys():
+        value = contents[key] 
+        suffix_filename = key.split('/')[-1]  # extracts the file name 
+        new_path = os.path.join(rundir, suffix_filename)
+        new_contents[new_path] = value
+    return new_contents 
 
 def get_O3_runtimes(rundir,files):
     '''get all runetimes for O3 (baseline).'''
     try:
         print('Checking if local O3_runtimes.pkl file exists to avoid waste of compilation.') 
         with open(os.path.join(rundir,'O3_runtimes.pkl'), 'rb') as f:
-            return pickle.load(f)
+            return rename_contents(rundir, pickle.load(f))
     except:
         print('Did not find O3_runtimes.pkl...', 'Compiling to get -O3 runtimes.')
         pass
@@ -162,14 +174,14 @@ def get_encodings_from_local(rundir):
     if os.path.exists(os.path.join(rundir,'obs_encodings.pkl')):
         print('found local obs_encodings.pkl.')
         with open(os.path.join(rundir,'obs_encodings.pkl'), 'rb') as f:
-            return pickle.load(f)
+            return rename_contents(rundir, pickle.load(f))
     return encodings
 
 def run_llvm_test_shell_command(rundir,filename):
     '''runs the file after the pragma is injected 
     and returns runtime.'''
-    full_path_header = os.path.join(rundir,'header.c')
-    cmd1 = 'timeout 4s '+ os.environ['CLANG_BIN_PATH'] + ' -O3 -lm '+full_path_header \
+    full_path_header = os.path.join(rundir, 'header.c')
+    cmd1 = 'timeout ' + TEST_SHELL_COMMAND_TIMEOUT + ' ' + os.environ['CLANG_BIN_PATH'] + ' -O3 -lm '+full_path_header \
     +' ' +filename+' -o ' +filename[:-1]+'o'
     cmd2 = filename[:-1]+'o '
     os.system(cmd1)
@@ -179,8 +191,8 @@ def run_llvm_test_shell_command(rundir,filename):
         runtime = None #None if fails
         logger.warning('Could not compile ' + filename +  
                        ' due to time out. Setting runtime to: ' + 
-                       str(runtime)+'. Considering increasing the timeout,'+ 
-                       ' which is currently set to 4 seconds.')
+                       str(runtime)+'. Considering increasing the TEST_SHELL_COMMAND_TIMEOUT,'+ 
+                       ' which is currently set to ' + TEST_SHELL_COMMAND_TIMEOUT)
     return runtime
 
 def get_runtime(rundir,new_code,current_filename):
