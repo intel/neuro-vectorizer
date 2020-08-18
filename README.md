@@ -8,8 +8,8 @@ Neurovectorizer is a framework that uses deep reinforcement learning (RL) to pre
 
 Dependencies:
 - TF2 (`pip install tensorflow`).
-- Ray (`pip install ray`).
-- RLlib (`pip install ray[rllib]`).
+- Ray (`pip install ray==0.8.4`).
+- RLlib (`pip install ray[rllib]==0.8.4`).
 - LLVM (you need to have `/usr/lib/llvm-X.Y/lib/libclang.so.1` or equivalent working). Currently tested with `/usr/lib/llvm-6.0/lib/libclang.so.1`.
 - clang (`pip install clang`). Current tested version is clang-6.0.0.2.  
 
